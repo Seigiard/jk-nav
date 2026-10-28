@@ -1,5 +1,8 @@
+export default defineContentScript({
+  matches: ['<all_urls>'],
+  main() {
 /**
- * Vim-Style Page Navigation Firefox Extension
+ * Vim-Style Page Navigation for Chrome
  * 
  * Navigation controls:
  * - j: Scroll down
@@ -17,24 +20,71 @@ const SCROLL_AMOUNT = 60;
 
 // To track multi-key sequences (for "gg")
 let keySequence = '';
-let keySequenceTimer = null;
+let keySequenceTimer: ReturnType<typeof setTimeout> | null = null;
 const KEY_SEQUENCE_TIMEOUT = 1000; // 1 second timeout for key sequence
 
 // Continuous scrolling support
 let isScrolling = false;
 let scrollDirection = 0;
-let scrollInterval = null;
+let scrollInterval: ReturnType<typeof setInterval> | null = null;
 const SCROLL_SPEED = 10; // Lower is faster (milliseconds between scroll steps)
 
 // Link hint mode variables
 let isLinkHintMode = false;
-let linkHints = [];
+type LinkHintType = 'link' | 'button' | 'input';
+
+interface LinkHint {
+  element: HTMLDivElement;
+  target: HTMLElement;
+  code: string;
+  type: LinkHintType;
+}
+
+interface VisibleElement {
+  element: HTMLElement;
+  type: LinkHintType;
+}
+
+let linkHints: LinkHint[] = [];
 let currentHintCode = '';
 const EXCLUDED_CHARS = ['j', 'k', 'g', 'f']; // Characters we don't use for hints
 const HINT_CHARS = 'abcdehilmnopqrstuvwxyz12345678'; // Characters we do use
 
+// Create and inject CSS for link hints
+const createHintStyles = () => {
+  const style = document.createElement('style');
+  style.id = 'vimnav-styles';
+  style.textContent = `
+    .vimnav-link-hint {
+      position: fixed;
+      background-color: #ffff00;
+      color: #000000;
+      border: 1px solid #000000;
+      padding: 2px 4px;
+      font-size: 12px;
+      font-weight: bold;
+      z-index: 2147483647;
+      border-radius: 4px;
+      box-shadow: 2px 2px 3px rgba(0, 0, 0, 0.3);
+      font-family: monospace;
+    }
+    
+    .vimnav-button-hint {
+      background-color: #ffa500;
+    }
+    
+    .vimnav-input-hint {
+      background-color: #90ee90;
+    }
+  `;
+  document.head.appendChild(style);
+};
+
+// Initialize styles
+createHintStyles();
+
 // Function to start continuous scrolling
-function startContinuousScroll(direction) {
+function startContinuousScroll(direction: number): void {
   // Clear any existing interval
   if (scrollInterval) {
     clearInterval(scrollInterval);
@@ -63,7 +113,7 @@ function stopContinuousScroll() {
   scrollDirection = 0;
 }
 
-// Main event listener for keyboard input
+// Keyboard event listeners
 document.addEventListener('keydown', (event) => {
   // Ignore inputs when focus is on form elements
   if (isUserTyping()) {
@@ -120,7 +170,7 @@ document.addEventListener('keydown', (event) => {
       // Go to bottom of page
       window.scrollTo({
         top: document.body.scrollHeight,
-        behavior: 'auto'
+        behavior: 'smooth'
       });
       break;
       
@@ -151,6 +201,18 @@ document.addEventListener('keydown', (event) => {
   }
 });
 
+// Add keyup event listener to stop scrolling when key is released
+document.addEventListener('keyup', (event) => {
+  if (event.key === 'j' || event.key === 'k') {
+    stopContinuousScroll();
+  }
+});
+
+// Stop scrolling when window loses focus
+window.addEventListener('blur', () => {
+  stopContinuousScroll();
+});
+
 /**
  * Enter link hint mode - show link hints and prepare for hint selection
  */
@@ -169,11 +231,11 @@ function showLinkHints() {
   
   // Find all clickable elements on the page
   const links = document.querySelectorAll('a');
-  const buttons = document.querySelectorAll('button, input[type="button"], input[type="submit"], [role="button"]');
-  const inputs = document.querySelectorAll('input:not([type="button"]):not([type="submit"]), textarea, select');
+  const buttons = document.querySelectorAll<HTMLElement>('button, input[type="button"], input[type="submit"], [role="button"]');
+  const inputs = document.querySelectorAll<HTMLElement>('input:not([type="button"]):not([type="submit"]), textarea, select');
   
   // Count visible elements to generate enough codes
-  const visibleElements = [];
+  const visibleElements: VisibleElement[] = [];
   
   // Collect visible links
   links.forEach(link => {
@@ -210,7 +272,7 @@ function showLinkHints() {
   
   // Create hint elements for each clickable element
   visibleElements.forEach((item, index) => {
-    const hintCode = hintCodes[index];
+    const hintCode = hintCodes[index]!;
     createLinkHint(item.element, hintCode, index, item.type);
   });
 }
@@ -218,7 +280,7 @@ function showLinkHints() {
 /**
  * Check if an element is visible in the viewport
  */
-function isElementVisible(element) {
+function isElementVisible(element: HTMLElement): boolean {
   const rect = element.getBoundingClientRect();
   return (
     rect.width > 0 &&
@@ -236,14 +298,14 @@ function isElementVisible(element) {
 /**
  * Generate 2-character hint codes for links
  */
-function generateHintCodes(count) {
-  const codes = [];
+function generateHintCodes(count: number): string[] {
+  const codes: string[] = [];
   const charsLength = HINT_CHARS.length;
   
   // Generate 2-letter codes
   for (let i = 0; i < charsLength; i++) {
     for (let j = 0; j < charsLength; j++) {
-      codes.push(HINT_CHARS[i] + HINT_CHARS[j]);
+      codes.push(HINT_CHARS[i]! + HINT_CHARS[j]!);
       if (codes.length >= count) {
         return codes;
       }
@@ -256,36 +318,24 @@ function generateHintCodes(count) {
 /**
  * Create and position a link hint element
  */
-function createLinkHint(element, hintCode, index, type) {
+function createLinkHint(element: HTMLElement, hintCode: string, index: number, type: LinkHintType): void {
   const rect = element.getBoundingClientRect();
   
   // Create hint element
   const hintElement = document.createElement('div');
   hintElement.textContent = hintCode;
-  hintElement.className = 'vim-nav-link-hint';
+  hintElement.className = 'vimnav-link-hint';
   
-  // Style based on element type
-  let bgColor = '#ffff00'; // Default yellow for links
+  // Add different styling based on element type
   if (type === 'button') {
-    bgColor = '#ffa500'; // Orange for buttons
+    hintElement.classList.add('vimnav-button-hint');
   } else if (type === 'input') {
-    bgColor = '#90ee90'; // Light green for input elements
+    hintElement.classList.add('vimnav-input-hint');
   }
   
-  hintElement.style.cssText = `
-    position: fixed;
-    top: ${rect.top - 10}px;
-    left: ${rect.left - 10}px;
-    background-color: ${bgColor};
-    color: #000000;
-    border: 1px solid #000000;
-    padding: 2px 4px;
-    font-size: 12px;
-    font-weight: bold;
-    z-index: 10000;
-    border-radius: 4px;
-    box-shadow: 2px 2px 3px rgba(0, 0, 0, 0.3);
-  `;
+  // Position the hint element
+  hintElement.style.top = `${rect.top - 10}px`;
+  hintElement.style.left = `${rect.left - 10}px`;
   
   document.body.appendChild(hintElement);
   
@@ -301,10 +351,11 @@ function createLinkHint(element, hintCode, index, type) {
 /**
  * Handle keypresses while in link hint mode
  */
-function handleLinkHintModeKeypress(event) {
+function handleLinkHintModeKeypress(event: KeyboardEvent): void {
   // Escape key exits link hint mode
   if (event.key === 'Escape') {
     exitLinkHintMode();
+    event.preventDefault();
     return;
   }
   
@@ -372,7 +423,7 @@ function handleLinkHintModeKeypress(event) {
 /**
  * Activate the targeted element based on its type
  */
-function activateElement(element, type) {
+function activateElement(element: HTMLElement, type: LinkHintType): void {
   if (type === 'input') {
     element.focus();
   } else {
@@ -406,8 +457,11 @@ function clearLinkHints() {
  * Check if user is currently typing in a form element
  * to avoid intercepting keyboard inputs when typing
  */
-function isUserTyping() {
-  const activeElement = document.activeElement;
+function isUserTyping(): boolean {
+  const activeElement = document.activeElement as HTMLElement | null;
+  if (activeElement === null) {
+    return false;
+  }
   const inputElements = ['INPUT', 'TEXTAREA', 'SELECT', 'BUTTON'];
   const isEditable = activeElement.isContentEditable;
   
@@ -416,3 +470,6 @@ function isUserTyping() {
     isEditable
   );
 }
+
+  },
+});
