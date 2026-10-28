@@ -25,15 +25,15 @@ These are the WXT defaults the spec plans for. Once `package.json` exists, its `
 
 Two entrypoints, joined by one message:
 
-- `entrypoints/content.ts` is upstream `page-navigator.js` inside `defineContentScript({ matches: ['<all_urls>'] })`. It owns all key handling. On `J`/`K` it sends `{ cmd: "prevTab" }` or `{ cmd: "nextTab" }` through `browser.runtime.sendMessage`.
-- `entrypoints/background.ts` is stateless. Chrome runs it as a service worker and Firefox as an event page, so keep no state in module variables. It calls `tabs.query({ currentWindow: true })`, computes the target index with wrap-around, then calls `tabs.update(id, { active: true })`.
+- `entrypoints/content.ts` is upstream `page-navigator.js` inside `defineContentScript({ matches: ['<all_urls>'] })`. It owns all key handling. On `J`/`K` it sends one `browser.runtime.sendMessage` carrying the direction, left or right (glossary: Left tab, Right tab).
+- `entrypoints/background.ts` is stateless. Chrome runs it as a service worker and Firefox as an event page, so keep no state in module variables. It calls `tabs.query({ currentWindow: true })`, picks the target with wrap-around, skipping hidden tabs and tabs in collapsed groups, then calls `tabs.update(id, { active: true })`.
 - `wxt.config.ts` replaces `manifest.json`. It must set `browser_specific_settings.gecko.id`, which Firefox needs for signing.
 
 Tab switching needs a content script: the `commands` manifest API accepts only shortcuts with `Ctrl` or `Alt`.
 
 ## Constraints
 
-- One API permission: `tabGroups`, to skip tabs in collapsed groups (spec FR-3a, NFR-2). `tabs.query` and `tabs.update` work without the `tabs` permission because the code reads only tab `index`, `id`, `hidden`, and `groupId`. Adding another permission changes the store review, so treat it as a product decision.
+- One API permission: `tabGroups`, to skip tabs in collapsed groups (spec FR-3a, NFR-2). `tabs.query` and `tabs.update` work without the `tabs` permission because the code reads only tab `index`, `id`, `active`, `hidden`, and `groupId`. Adding another permission changes the store review, so treat it as a product decision.
 - No network, remote code, or analytics.
 - The content script stays vanilla TypeScript with no UI framework.
 - Keep the `J` = left tab, `K` = right tab mapping in one constant (FR-1).
