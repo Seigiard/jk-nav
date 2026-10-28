@@ -180,8 +180,14 @@ export function createKeyInterpreter(): KeyInterpreter {
   }
 
   function linkHintTargets(count: number): KeyResult {
+    const codes = linkHints.start(count);
+    if (codes.length === 0) {
+      inLinkHintMode = false;
+      return NO_RESULT;
+    }
+
     inLinkHintMode = true;
-    return { effects: [{ kind: 'showLinkHints', codes: linkHints.start(count) }], consumed: false };
+    return { effects: [{ kind: 'showLinkHints', codes }], consumed: false };
   }
 
   return { press, release, blur, linkHintTargets };
