@@ -321,6 +321,21 @@ describe('createKeyInterpreter', () => {
     expect(result).toEqual({ effects: [{ kind: 'activateLinkHint', index: 1 }, { kind: 'exitLinkHints' }], consumed: true });
   });
 
+  it('scrolls after a full Hint code activates a target', () => {
+    // #given
+    const interpreter = createKeyInterpreter();
+    interpreter.press(key({ code: 'KeyF' }));
+    interpreter.linkHintTargets(2);
+    interpreter.press(key({ code: 'KeyA' }));
+    interpreter.press(key({ code: 'KeyB' }));
+
+    // #when
+    const result = interpreter.press(key({ code: 'KeyJ' }));
+
+    // #then
+    expect(result).toEqual({ effects: [{ kind: 'scrollStep', direction: 1 }], consumed: false });
+  });
+
   it.each([
     { name: 'Escape', input: { code: 'Escape' } },
     { name: 'Shift+Escape', input: { code: 'Escape', shift: true } },
@@ -337,6 +352,23 @@ describe('createKeyInterpreter', () => {
     expect(result).toEqual({ effects: [{ kind: 'exitLinkHints' }], consumed: true });
   });
 
+  it.each([
+    { name: 'Escape', input: { code: 'Escape' } },
+    { name: 'Shift+Escape', input: { code: 'Escape', shift: true } },
+  ])('scrolls after $name exits Link-hint mode', ({ input }) => {
+    // #given
+    const interpreter = createKeyInterpreter();
+    interpreter.press(key({ code: 'KeyF' }));
+    interpreter.linkHintTargets(1);
+    interpreter.press(key(input));
+
+    // #when
+    const result = interpreter.press(key({ code: 'KeyJ' }));
+
+    // #then
+    expect(result).toEqual({ effects: [{ kind: 'scrollStep', direction: 1 }], consumed: false });
+  });
+
   it('exits and consumes a second Hint character that matches no code', () => {
     // #given
     const interpreter = createKeyInterpreter();
@@ -351,6 +383,21 @@ describe('createKeyInterpreter', () => {
     expect(result).toEqual({ effects: [{ kind: 'exitLinkHints' }], consumed: true });
   });
 
+  it('scrolls after a second Hint character matches no code', () => {
+    // #given
+    const interpreter = createKeyInterpreter();
+    interpreter.press(key({ code: 'KeyF' }));
+    interpreter.linkHintTargets(1);
+    interpreter.press(key({ code: 'KeyA' }));
+    interpreter.press(key({ code: 'KeyB' }));
+
+    // #when
+    const result = interpreter.press(key({ code: 'KeyJ' }));
+
+    // #then
+    expect(result).toEqual({ effects: [{ kind: 'scrollStep', direction: 1 }], consumed: false });
+  });
+
   it('exits and consumes a first Hint character that matches no code', () => {
     // #given
     const interpreter = createKeyInterpreter();
@@ -362,6 +409,20 @@ describe('createKeyInterpreter', () => {
 
     // #then
     expect(result).toEqual({ effects: [{ kind: 'exitLinkHints' }], consumed: true });
+  });
+
+  it('scrolls after a first Hint character matches no code', () => {
+    // #given
+    const interpreter = createKeyInterpreter();
+    interpreter.press(key({ code: 'KeyF' }));
+    interpreter.linkHintTargets(1);
+    interpreter.press(key({ code: 'KeyB' }));
+
+    // #when
+    const result = interpreter.press(key({ code: 'KeyJ' }));
+
+    // #then
+    expect(result).toEqual({ effects: [{ kind: 'scrollStep', direction: 1 }], consumed: false });
   });
 
   it('leaves an unrelated Link-hint key to the page', () => {
