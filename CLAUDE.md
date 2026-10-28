@@ -19,7 +19,7 @@ These are the WXT defaults the spec plans for. Once `package.json` exists, its `
 
 - `npm run dev`: start Chrome with the extension loaded and hot reload.
 - `npm run dev:firefox`: the same for Firefox.
-- `npx wxt zip` and `npx wxt zip -b firefox`: build the store packages. Both must succeed (acceptance criterion 6).
+- `npx wxt zip` and `npx wxt zip -b firefox`: build the store packages. Both must succeed (acceptance criterion 8).
 
 ## Architecture
 
