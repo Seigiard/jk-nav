@@ -1,33 +1,27 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
-
 ## Project state
 
 The spec is GitHub issue #1 (`gh issue view 1`). Read it before any work; it is the source of truth for keys, FR/NFR numbers, and acceptance criteria. Domain terms are in `GLOSSARY.md`.
 
-This repo is `Seigiard/jk-nav`, a GitHub fork of `johnnymatthews/vim-style-page-navigation` (MIT; remote `upstream`). The goal is a port to Manifest V3 with WXT, so one codebase builds for Chrome and Firefox. The WXT port adds `Shift+J`/`Shift+K` tab switching and fixes the upstream bugs listed in the spec's Problem Statement.
-
-Upstream has two release branches:
-
-- `firefox/stable` is the default branch: MV2, `.jpg` icons.
-- `chrome/stable` is already MV3, has `.png` icons and a `privacy-policy.txt`, and has a newer `page-navigator.js` with `keyup` and `blur` handlers. It is the WXT baseline (spec, Implementation Decisions).
+This repo is `Seigiard/jk-nav`, a GitHub fork of `johnnymatthews/vim-style-page-navigation` (MIT; remote `upstream`). One WXT codebase builds the Manifest V3 extension for Chrome and Firefox. The default branch is `firefox/stable`, inherited from Upstream; pull requests target it.
 
 ## Commands
 
-These are the WXT defaults the spec plans for. Once `package.json` exists, its `scripts` win over this list.
+`package.json` `scripts` lists the commands. What the scripts do not say:
 
-- `npm run dev`: start Chrome with the extension loaded and hot reload.
-- `npm run dev:firefox`: the same for Firefox.
-- `npx wxt zip` and `npx wxt zip -b firefox`: build the store packages. Both must succeed (acceptance criterion 8).
+- `npm test` is the full gate: build, Vitest, then Playwright.
+- Set `E2E_PORT` when several checkouts run e2e at once; each needs its own fixture-server port (default 4173).
+- Playwright runs only in Chromium. The Firefox package is checked by hand through `docs/release-check.md`.
+- Both `npm run zip` and `npm run zip:firefox` must succeed (acceptance criterion 8).
 
 ## Architecture
 
 Two entrypoints, joined by one message:
 
-- `entrypoints/content.ts` is upstream `page-navigator.js` inside `defineContentScript({ matches: ['<all_urls>'] })`. It owns all key handling. On `J`/`K` it sends one `browser.runtime.sendMessage` carrying the direction, left or right (glossary: Left tab, Right tab).
-- `entrypoints/background.ts` is stateless. Chrome runs it as a service worker and Firefox as an event page, so keep no state in module variables. It calls `tabs.query({ windowId: sender.tab.windowId })`, picks the target with wrap-around, skipping hidden tabs and tabs in collapsed groups, then calls `tabs.update(id, { active: true })`.
-- `wxt.config.ts` replaces `manifest.json`. It must set `browser_specific_settings.gecko.id`, which Firefox needs for signing.
+- `entrypoints/content.ts` is Upstream `page-navigator.js` inside `defineContentScript({ matches: ['<all_urls>'] })`. It owns all key handling and calls `resolveKey` in `utils/key-mapper.ts`, which maps a key event to an action by `event.code`. On a Tab switch it sends one `browser.runtime.sendMessage` carrying the direction, left or right (glossary: Left tab, Right tab). It sends that message only for trusted events (`event.isTrusted`), so a page script cannot switch the user's tabs.
+- `entrypoints/background.ts` is stateless. Chrome runs it as a service worker and Firefox as an event page, so keep no state in module variables. For the sender tab's window it calls `tabs.query({ windowId })` and `tabGroups.query({ windowId, collapsed: true })`, picks the target with `selectTabTarget` in `utils/tab-target.ts`, then calls `tabs.update(id, { active: true })`. Where `tabGroups` is missing (Firefox before 139), collapsed groups stay in the cycle.
+- `wxt.config.ts` replaces `manifest.json`. It sets `browser_specific_settings.gecko.id`, which Firefox needs for signing, and `gecko.data_collection_permissions`, which AMO needs for new submissions.
 
 Tab switching needs a content script: the `commands` manifest API accepts only shortcuts with `Ctrl` or `Alt`.
 
@@ -36,8 +30,8 @@ Tab switching needs a content script: the `commands` manifest API accepts only s
 - One API permission: `tabGroups`, to skip tabs in collapsed groups (spec FR-3a, NFR-2). `tabs.query` and `tabs.update` work without the `tabs` permission because the code reads only tab `index`, `id`, `active`, `hidden`, and `groupId`. Adding another permission changes the store review, so treat it as a product decision.
 - No network, remote code, or analytics.
 - The content script stays vanilla TypeScript with no UI framework.
-- Keep the `J` = left tab, `K` = right tab mapping in one constant (FR-1).
-- Keep the upstream MIT license and author credit in the README.
+- Keep the `J` = left tab, `K` = right tab mapping in one constant, `TAB_SWITCH_DIRECTIONS` in `utils/key-mapper.ts` (FR-1).
+- Keep the Upstream MIT license and author credit in the README.
 
 ## Agent skills
 
