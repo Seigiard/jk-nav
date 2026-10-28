@@ -196,7 +196,8 @@ test('Russian-layout KeyJ keyup stops continuous scrolling by physical position'
   const { context, page } = await openExtensionPage('/tall-page.html');
 
   try {
-    await dispatchSyntheticKey(page, 'keydown', { key: 'j', code: 'KeyJ' });
+    await page.keyboard.down('j');
+    await page.keyboard.down('j');
     await page.waitForFunction(() => window.scrollY >= 120);
 
     // #when

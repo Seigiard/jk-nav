@@ -138,6 +138,7 @@ function startPendingG(): void {
 function toKeyInput(event: KeyboardEvent): KeyInput {
   return {
     code: event.code,
+    repeat: event.repeat,
     shift: event.shiftKey,
     ctrl: event.ctrlKey,
     alt: event.altKey,
@@ -176,6 +177,8 @@ function handleKeyAction(action: KeyAction, event: KeyboardEvent): void {
         top: SCROLL_AMOUNT * action.direction,
         behavior: 'auto'
       });
+      return;
+    case 'continuousScroll':
       if (!isScrolling || scrollDirection !== action.direction) {
         startContinuousScroll(action.direction);
       }

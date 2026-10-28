@@ -23,7 +23,7 @@ test('j scrolls a fixture page with the production extension loaded', async () =
 
     // #then
     // Upstream's repeat timing makes the distance unstable until ticket #5 makes it exact.
-    await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThanOrEqual(60);
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(60);
   } finally {
     await context.close();
   }

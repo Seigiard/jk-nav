@@ -47,6 +47,34 @@ describe('resolveKey', () => {
     expect(action).toEqual(expected);
   });
 
+  it.each([
+    { name: 'KeyJ', code: 'KeyJ', direction: 1 },
+    { name: 'KeyK', code: 'KeyK', direction: -1 },
+  ])('maps the first $name keydown to one Scroll step', ({ code, direction }) => {
+    // #given
+    const input = { ...DEFAULT_INPUT, code, repeat: false };
+
+    // #when
+    const action = resolveKey(input);
+
+    // #then
+    expect(action).toEqual({ kind: 'scroll', direction });
+  });
+
+  it.each([
+    { name: 'KeyJ', code: 'KeyJ', direction: 1 },
+    { name: 'KeyK', code: 'KeyK', direction: -1 },
+  ])('maps a repeated $name keydown to Continuous scroll', ({ code, direction }) => {
+    // #given
+    const input = { ...DEFAULT_INPUT, code, repeat: true };
+
+    // #when
+    const action = resolveKey(input);
+
+    // #then
+    expect(action).toEqual({ kind: 'continuousScroll', direction });
+  });
+
   it('goes to the top when plain KeyG completes the g sequence', () => {
     // #given
     const input = { ...DEFAULT_INPUT, code: 'KeyG', pendingG: true };

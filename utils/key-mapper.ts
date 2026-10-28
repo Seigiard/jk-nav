@@ -1,5 +1,6 @@
 export interface KeyInput {
   code: string;
+  repeat?: boolean;
   shift: boolean;
   ctrl: boolean;
   alt: boolean;
@@ -13,6 +14,7 @@ export interface KeyInput {
 export type KeyAction =
   | { kind: 'none' }
   | { kind: 'scroll'; direction: 1 | -1 }
+  | { kind: 'continuousScroll'; direction: 1 | -1 }
   | { kind: 'top' }
   | { kind: 'bottom' }
   | { kind: 'back' }
@@ -66,9 +68,9 @@ export function resolveKey(input: KeyInput): KeyAction {
 
   switch (input.code) {
     case 'KeyJ':
-      return { kind: 'scroll', direction: 1 };
+      return input.repeat ? { kind: 'continuousScroll', direction: 1 } : { kind: 'scroll', direction: 1 };
     case 'KeyK':
-      return { kind: 'scroll', direction: -1 };
+      return input.repeat ? { kind: 'continuousScroll', direction: -1 } : { kind: 'scroll', direction: -1 };
     case 'KeyG':
       return input.pendingG ? { kind: 'top' } : { kind: 'pendingG' };
     case 'KeyF':
