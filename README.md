@@ -1,70 +1,86 @@
-<p align="center">
-  <img width="250" height="250" src="https://github.com/user-attachments/assets/5278e4c5-c8d3-4d3b-ab05-e3bc7947bbb3" alt="Alt text for your image">
-</p>
+# jk-nav
 
-<h1 align="center">Vim-Style Page Navigation</h1>
+`jk-nav` is a browser extension for Vim-style page and tab navigation. It is
+one Manifest V3 codebase for Chrome and Firefox.
 
-A simple Firefox extension that adds vim-style keyboard navigation to any webpage. Pretty much stripped out all the extra stuff from the _excellent_  [Vimium FF](https://addons.mozilla.org/en-CA/firefox/addon/vimium-ff/) by [Phil Crosby](https://addons.mozilla.org/en-CA/firefox/user/14971172/) and [Stephen Blott](https://addons.mozilla.org/en-CA/firefox/user/12979436/).
+`jk-nav` is forked from [Upstream](https://github.com/johnnymatthews/vim-style-page-navigation),
+the Vim-style page navigation extension by [Johnny Matthews](https://github.com/johnnymatthews).
+It keeps Upstream's page controls and adds keyboard tab switching.
 
-![Screenshot From 2025-02-28 15-05-09](https://github.com/user-attachments/assets/1dcb7f68-55cf-4d1e-93da-87afde84ed7f)
+## Keys
 
-## Controls
+| Key | Action |
+| --- | --- |
+| `j` | Scroll down by one Scroll step. |
+| `k` | Scroll up by one Scroll step. |
+| `gg` | Go to the top of the page. |
+| `G` | Go to the bottom of the page. |
+| `H` | Go back in browser history. |
+| `L` | Go forward in browser history. |
+| `f` | Enter Link-hint mode. `jk-nav` shows a two-key Hint code beside each visible link, button, and form field. Type a code to activate that element. |
+| `Esc` | Leave Link-hint mode without activating an element. |
+| `Shift+J` | Switch to the Left tab in the current window. |
+| `Shift+K` | Switch to the Right tab in the current window. |
 
-- `j`: Scroll down
-- `k`: Scroll up
-- `gg`: Go to top of page
-- `G`: Go to bottom of page
-- `H`: Go back in browser history
-- `L`: Go forward in browser history
-- `f`: Enter link-hint mode - displays 2-character codes next to all visible links
-  - Type the corresponding 2-character code to navigate to that link
-  - Press `Esc` to exit link-hint mode
+The Keys are matched by their physical QWERTY positions. They work in any
+keyboard layout. `Shift` decides the case, so Caps Lock does not change what a
+Key does. Hint codes use physical key positions too.
 
-## Features
+`jk-nav` stays silent while Typing in a text field, text area, drop-down list,
+or editable page content. Buttons, checkboxes, radio buttons, and sliders are
+not Typing, so the page Keys continue to work after using those controls.
+Keys with `Ctrl`, `Alt`, or `Meta` pass through to the browser and the page.
+Keys pressed during IME composition are ignored.
 
-- Smooth scrolling for comfortable navigation
-- Keyboard shortcuts don't interfere with text input in forms
-- Works on all websites
+Tab switches wrap at both ends of the tab strip. They skip hidden tabs and tabs
+inside collapsed tab groups. A switch never leaves the current window.
 
-## Installation
+## Development
 
-### Temporary Installation (for Development)
+Install dependencies once:
 
-1. Open Firefox and navigate to `about:debugging`
-2. Click **This Firefox** in the sidebar
-3. Click **Load Temporary Add-on...**
-4. Navigate to the extension directory and select the `manifest.json` file
-
-### Permanent Installation
-
-1. Package the extension by zipping all files
-2. Submit the extension to [Firefox Add-ons](https://addons.mozilla.org/developers/)
-3. After approval, users can install from the Firefox Add-ons website
-
-## Directory Structure
-
-```
-vim-style-navigation/
-│
-├── manifest.json        # Extension metadata
-├── page-navigator.js    # Main functionality
-├── README.md            # Documentation
-└── icons/               # Extension icons
-    ├── icon-48.png
-    └── icon-96.png
+```sh
+npm ci
 ```
 
-## Customization
+Start development mode with hot reload:
 
-You can modify the following constants in `page-navigator.js` to customize the scrolling behavior:
+```sh
+npm run dev          # Chrome
+npm run dev:firefox  # Firefox
+```
 
-- `SCROLL_AMOUNT`: The distance to scroll with each keypress (in pixels)
-- `SCROLL_SPEED`: The interval between scroll steps when holding down a key (in milliseconds, lower = faster)
+Build the extension and create store packages:
 
-Examples:
-- For faster scrolling when holding keys, decrease `SCROLL_SPEED` (default: 10ms)
-- For larger scroll steps, increase `SCROLL_AMOUNT` (default: 60px)
+```sh
+npm run build          # Chrome build
+npm run build:firefox  # Firefox build
+npm run zip            # Chrome store package
+npm run zip:firefox    # Firefox store package
+```
 
-## License
+## Permissions
 
-MIT
+`jk-nav` requests the `tabGroups` permission. It uses this permission to detect
+collapsed tab groups and skip their tabs during a Tab switch. It requests no
+other API permission.
+
+## Known limitations
+
+- **Restricted pages:** Browser pages such as `chrome://`, `about:`, extension
+  stores, and built-in PDF viewers do not allow `jk-nav` to run. No Key works
+  on these pages. A Tab switch can still land on one; leave it with the
+  browser's own shortcut.
+- **Site shortcut conflicts:** Sites such as Gmail, GitHub, and X may have
+  their own `j` and `k` shortcuts. `jk-nav` takes those Keys while the user is
+  not Typing, so those site shortcuts can conflict.
+
+## Credits and license
+
+The original project is [Upstream](https://github.com/johnnymatthews/vim-style-page-navigation)
+by [Johnny Matthews](https://github.com/johnnymatthews). Upstream was inspired
+by the excellent [Vimium FF](https://addons.mozilla.org/en-CA/firefox/addon/vimium-ff/)
+by [Phil Crosby](https://addons.mozilla.org/en-CA/firefox/user/14971172/) and
+[Stephen Blott](https://addons.mozilla.org/en-CA/firefox/user/12979436/).
+
+This project is released under the [MIT License](https://opensource.org/license/mit/).
