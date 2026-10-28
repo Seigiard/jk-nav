@@ -19,12 +19,35 @@ function isTabSwitchMessage(message: unknown): message is TabSwitchMessage {
 
 async function activateTabInDirection(direction: TabDirection, windowId: number): Promise<void> {
   const tabs = await browser.tabs.query({ windowId });
+  const collapsedGroupIds = new Set<number>();
+
+  if (browser.tabGroups?.query !== undefined) {
+    try {
+      const collapsedGroups = await browser.tabGroups.query({ windowId, collapsed: true });
+      for (const group of collapsedGroups) {
+        collapsedGroupIds.add(group.id);
+      }
+    } catch {
+      // Older browsers may expose no usable tabGroups implementation.
+    }
+  }
+
   const tabInfo: TabInfo[] = tabs.flatMap((tab) => {
     if (tab.id === undefined || tab.index === undefined) {
       return [];
     }
 
-    return [{ id: tab.id, index: tab.index, active: tab.active }];
+    const tabWithHidden = tab as typeof tab & { hidden?: boolean };
+
+    return [
+      {
+        id: tab.id,
+        index: tab.index,
+        active: tab.active,
+        hidden: tabWithHidden.hidden,
+        inCollapsedGroup: tab.groupId !== undefined && collapsedGroupIds.has(tab.groupId),
+      },
+    ];
   });
   const targetId = selectTabTarget(tabInfo, direction);
 

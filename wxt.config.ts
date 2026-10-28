@@ -6,6 +6,7 @@ export default defineConfig({
     name: 'Vim-Style Page Navigation',
     version: '1.0.0',
     description: 'Navigate pages using vim-style keyboard shortcuts (j/k for scrolling, gg/G for top/bottom, / for link hints)',
+    permissions: ['tabGroups'],
     icons: {
       16: 'icons/16x16.png',
       32: 'icons/32x32.png',

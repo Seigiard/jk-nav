@@ -2,6 +2,8 @@ export interface TabInfo {
   id: number;
   index: number;
   active: boolean;
+  hidden?: boolean;
+  inCollapsedGroup?: boolean;
 }
 
 export type TabDirection = 'left' | 'right';
@@ -19,7 +21,15 @@ export function selectTabTarget(tabs: TabInfo[], direction: TabDirection): numbe
   }
 
   const offset = direction === 'left' ? -1 : 1;
-  const targetIndex = (activeIndex + offset + orderedTabs.length) % orderedTabs.length;
 
-  return orderedTabs[targetIndex]?.id ?? null;
+  for (let step = 1; step < orderedTabs.length; step += 1) {
+    const targetIndex = (activeIndex + offset * step + orderedTabs.length) % orderedTabs.length;
+    const target = orderedTabs[targetIndex];
+
+    if (target !== undefined && !target.hidden && !target.inCollapsedGroup) {
+      return target.id;
+    }
+  }
+
+  return null;
 }
