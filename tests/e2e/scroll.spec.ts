@@ -1,15 +1,13 @@
-import { chromium, expect, test, type BrowserContext, type Page } from '@playwright/test';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 
-const extensionPath = path.resolve(fileURLToPath(new URL('../../.output/chrome-mv3', import.meta.url)));
+import { openExtensionContext } from './extension-tabs';
+
+type ScrollKey = 'j' | 'k';
 
 interface ExtensionPage {
   context: BrowserContext;
   page: Page;
 }
-
-type ScrollKey = 'j' | 'k';
 
 const RELEASE_CASES = [
   { name: 'plain KeyJ', key: 'j', code: 'KeyJ', keyValue: 'j', shiftKey: false },
@@ -19,14 +17,7 @@ const RELEASE_CASES = [
 ] as const;
 
 async function openExtensionPage(): Promise<ExtensionPage> {
-  const context = await chromium.launchPersistentContext('', {
-    channel: 'chromium',
-    headless: true,
-    args: [
-      `--disable-extensions-except=${extensionPath}`,
-      `--load-extension=${extensionPath}`,
-    ],
-  });
+  const context = await openExtensionContext();
   const page = await context.newPage();
   await page.goto('/tall-page.html');
   await page.locator('#vimnav-styles').waitFor({ state: 'attached' });
@@ -34,7 +25,7 @@ async function openExtensionPage(): Promise<ExtensionPage> {
 }
 
 async function startContinuousScroll(page: Page, key: ScrollKey = 'j'): Promise<void> {
-  const initialPosition = key === 'j' ? 0 : 600;
+  const initialPosition = key === 'j' ? 0 : 2400;
   await page.evaluate((position) => window.scrollTo(0, position), initialPosition);
   await page.waitForFunction((position) => window.scrollY === position, initialPosition);
   await page.keyboard.down(key);
@@ -133,6 +124,12 @@ for (const keyCase of RELEASE_CASES) {
       await page.waitForTimeout(50);
 
       // #then
+      if (keyCase.key === 'j') {
+        const maximumPosition = await page.evaluate(() => document.documentElement.scrollHeight - window.innerHeight);
+        expect(positionAtRelease).toBeLessThan(maximumPosition);
+      } else {
+        expect(positionAtRelease).toBeGreaterThan(0);
+      }
       expect(await page.evaluate(() => window.scrollY)).toBe(positionAtRelease);
     } finally {
       await context.close();
@@ -153,6 +150,8 @@ test('window blur stops Continuous scroll', async () => {
     await page.waitForTimeout(50);
 
     // #then
+    const maximumPosition = await page.evaluate(() => document.documentElement.scrollHeight - window.innerHeight);
+    expect(positionAtBlur).toBeLessThan(maximumPosition);
     expect(await page.evaluate(() => window.scrollY)).toBe(positionAtBlur);
   } finally {
     await context.close();

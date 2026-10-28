@@ -1,22 +1,25 @@
-import { chromium, expect, test, type Page } from '@playwright/test';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { expect, test, type Page } from '@playwright/test';
 
-const extensionPath = path.resolve(fileURLToPath(new URL('../../.output/chrome-mv3', import.meta.url)));
+import { openExtensionContext } from './extension-tabs';
 
 async function withFormPage(run: (page: Page) => Promise<void>): Promise<void> {
-  const context = await chromium.launchPersistentContext('', {
-    channel: 'chromium',
-    headless: true,
-    args: [
-      `--disable-extensions-except=${extensionPath}`,
-      `--load-extension=${extensionPath}`,
-    ],
-  });
+  const context = await openExtensionContext();
 
   try {
     const page = await context.newPage();
     await page.goto('/form-controls.html');
+    await run(page);
+  } finally {
+    await context.close();
+  }
+}
+
+async function withDesignModePage(run: (page: Page) => Promise<void>): Promise<void> {
+  const context = await openExtensionContext();
+
+  try {
+    const page = await context.newPage();
+    await page.goto('/design-mode.html');
     await run(page);
   } finally {
     await context.close();
@@ -163,6 +166,75 @@ test('j scrolls with a non-editable widget inside editable content focused', asy
 
     // #then
     expect(await page.evaluate(() => window.scrollY)).toBe(60);
+  });
+});
+
+for (const editableChild of [
+  { name: 'no contenteditable attribute', selector: '#editable-child-unset' },
+  { name: 'contenteditable="inherit"', selector: '#editable-child-inherit' },
+  { name: 'an invalid contenteditable value', selector: '#editable-child-invalid' },
+] as const) {
+  test(`j stays Typing in an editor child with ${editableChild.name}`, async () => {
+    await withFormPage(async (page) => {
+      // #given
+      const child = page.locator(editableChild.selector);
+      await child.focus();
+      await child.selectText();
+
+      // #when
+      await page.keyboard.press('j');
+
+      // #then
+      expect({
+        text: await child.textContent(),
+        scrollY: await page.evaluate(() => window.scrollY),
+      }).toEqual({ text: 'j', scrollY: 0 });
+    });
+  });
+}
+
+test('j scrolls when the top document is not in designMode', async () => {
+  await withDesignModePage(async (page) => {
+    // #given
+    const editor = page.locator('#editor');
+
+    // #when
+    await page.keyboard.press('j');
+
+    // #then
+    expect({
+      text: await editor.textContent(),
+      scrollY: await page.evaluate(() => window.scrollY),
+    }).toEqual({ text: 'start', scrollY: 60 });
+  });
+});
+
+test('j stays Typing while the top document is in designMode', async () => {
+  await withDesignModePage(async (page) => {
+    // #given
+    const editor = page.locator('#editor');
+    await page.evaluate(() => {
+      document.designMode = 'on';
+      const target = document.querySelector('#editor');
+      if (!target) {
+        throw new Error('The designMode fixture has no editor');
+      }
+      const range = document.createRange();
+      range.selectNodeContents(target);
+      range.collapse(false);
+      const selection = window.getSelection();
+      selection?.removeAllRanges();
+      selection?.addRange(range);
+    });
+
+    // #when
+    await page.keyboard.press('j');
+
+    // #then
+    expect({
+      text: await editor.textContent(),
+      scrollY: await page.evaluate(() => window.scrollY),
+    }).toEqual({ text: 'startj', scrollY: 0 });
   });
 });
 

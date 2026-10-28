@@ -1,8 +1,6 @@
-import { chromium, expect, test, type BrowserContext, type Page } from '@playwright/test';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 
-const extensionPath = path.resolve(fileURLToPath(new URL('../../.output/chrome-mv3', import.meta.url)));
+import { openExtensionContext } from './extension-tabs';
 
 interface SyntheticKey {
   key: string;
@@ -20,14 +18,7 @@ interface ExtensionPage {
 }
 
 async function openExtensionPage(fixturePath: string): Promise<ExtensionPage> {
-  const context = await chromium.launchPersistentContext('', {
-    channel: 'chromium',
-    headless: true,
-    args: [
-      `--disable-extensions-except=${extensionPath}`,
-      `--load-extension=${extensionPath}`,
-    ],
-  });
+  const context = await openExtensionContext();
   const page = await context.newPage();
   await page.goto(fixturePath);
   return { context, page };
@@ -210,6 +201,8 @@ test('Russian-layout KeyJ keyup stops continuous scrolling by physical position'
     await dispatchSyntheticKey(page, 'keyup', { key: 'j', code: 'KeyJ' });
 
     // #then
+    const maximumPosition = await page.evaluate(() => document.documentElement.scrollHeight - window.innerHeight);
+    expect(positionAtRelease).toBeLessThan(maximumPosition);
     expect(positionAfterRelease).toBe(positionAtRelease);
   } finally {
     await context.close();
