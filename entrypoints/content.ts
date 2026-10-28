@@ -49,7 +49,7 @@ let linkHints: LinkHint[] = [];
 let currentHintCode = '';
 const EXCLUDED_CHARS = ['j', 'k', 'g', 'f']; // Characters we don't use for hints
 const HINT_CHARS = 'abcdehilmnopqrstuvwxyz12345678'; // Characters we do use
-const TEXT_INPUT_TYPES = new Set(['email', 'password', 'search', 'tel', 'text', 'url']);
+const NON_TYPING_INPUT_TYPES = new Set(['checkbox', 'radio', 'range', 'color', 'file', 'button', 'submit', 'reset', 'image']);
 
 // Create and inject CSS for link hints
 const createHintStyles = () => {
@@ -468,7 +468,7 @@ function isUserTyping(event: KeyboardEvent): boolean {
       return true;
     }
 
-    return target instanceof HTMLInputElement && TEXT_INPUT_TYPES.has(target.type);
+    return target instanceof HTMLInputElement && !NON_TYPING_INPUT_TYPES.has(target.type);
   });
 }
 
