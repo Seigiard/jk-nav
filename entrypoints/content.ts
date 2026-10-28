@@ -49,6 +49,7 @@ let linkHints: LinkHint[] = [];
 let currentHintCode = '';
 const EXCLUDED_CHARS = ['j', 'k', 'g', 'f']; // Characters we don't use for hints
 const HINT_CHARS = 'abcdehilmnopqrstuvwxyz12345678'; // Characters we do use
+const NON_TYPING_INPUT_TYPES = new Set(['checkbox', 'radio', 'range', 'color', 'file', 'button', 'submit', 'reset', 'image']);
 
 // Create and inject CSS for link hints
 const createHintStyles = () => {
@@ -116,7 +117,7 @@ function stopContinuousScroll() {
 // Keyboard event listeners
 document.addEventListener('keydown', (event) => {
   // Ignore inputs when focus is on form elements
-  if (isUserTyping()) {
+  if (isUserTyping(event)) {
     return;
   }
   
@@ -457,18 +458,18 @@ function clearLinkHints() {
  * Check if user is currently typing in a form element
  * to avoid intercepting keyboard inputs when typing
  */
-function isUserTyping(): boolean {
-  const activeElement = document.activeElement as HTMLElement | null;
-  if (activeElement === null) {
-    return false;
-  }
-  const inputElements = ['INPUT', 'TEXTAREA', 'SELECT', 'BUTTON'];
-  const isEditable = activeElement.isContentEditable;
-  
-  return (
-    inputElements.includes(activeElement.tagName) || 
-    isEditable
-  );
+function isUserTyping(event: KeyboardEvent): boolean {
+  return event.composedPath().some((target) => {
+    if (!(target instanceof HTMLElement)) {
+      return false;
+    }
+
+    if (target.isContentEditable || target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement) {
+      return true;
+    }
+
+    return target instanceof HTMLInputElement && !NON_TYPING_INPUT_TYPES.has(target.type);
+  });
 }
 
   },
