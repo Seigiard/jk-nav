@@ -19,7 +19,7 @@ This repo is `Seigiard/jk-nav`, a GitHub fork of `johnnymatthews/vim-style-page-
 
 Two entrypoints, joined by one message:
 
-- `entrypoints/content.ts` is Upstream `page-navigator.js` inside `defineContentScript({ matches: ['<all_urls>'] })`. It owns all key handling and calls `resolveKey` in `utils/key-mapper.ts`, which maps a key event to an action by `event.code`. On a Tab switch it sends one `browser.runtime.sendMessage` built by `createTabSwitchMessage` in `utils/tab-switch.ts`, carrying the direction, left or right (glossary: Left tab, Right tab). It sends that message only for trusted events (`event.isTrusted`), so a page script cannot switch the user's tabs.
+- `entrypoints/content.ts` is Upstream `page-navigator.js` inside `defineContentScript({ matches: ['<all_urls>'] })`. It is a DOM adapter for the stateful interpreter in `utils/key-interpreter.ts`: it reads keyboard events, computes typing state, applies effects, and owns the DOM work for scrolling and Link-hint display. On a Tab switch it sends one `browser.runtime.sendMessage` built by `createTabSwitchMessage` in `utils/tab-switch.ts`, carrying the direction, left or right (glossary: Left tab, Right tab). The interpreter accepts tab switches only for trusted events (`event.isTrusted`), so a page script cannot switch the user's tabs.
 - `entrypoints/background.ts` is stateless. Chrome runs it as a service worker and Firefox as an event page, so keep no state in module variables. It accepts only messages passing `isTabSwitchMessage` from `utils/tab-switch.ts`. For the sender tab's window it calls `tabs.query({ windowId })` and `tabGroups.query({ windowId, collapsed: true })`, passes the raw tabs and collapsed group ids to `selectTabSwitchTarget` in `utils/tab-switch.ts`, then calls `tabs.update(id, { active: true })`. Where `tabGroups` is missing or throws (Firefox before 139), the collapsed group id set is empty.
 - `wxt.config.ts` replaces `manifest.json`. It sets `browser_specific_settings.gecko.id`, which Firefox needs for signing, and `gecko.data_collection_permissions`, which AMO needs for new submissions.
 
@@ -31,7 +31,7 @@ Tab switching needs a content script: the `commands` manifest API accepts only s
 - Keep the Tab switch message constructor, guard, and target selection in `utils/tab-switch.ts`. `background.ts` contains only the `browser.tabs.*` and `browser.tabGroups.*` calls around that module; add no port or adapter.
 - No network, remote code, or analytics.
 - The content script stays vanilla TypeScript with no UI framework.
-- Keep the `J` = left tab, `K` = right tab mapping in one constant, `TAB_SWITCH_DIRECTIONS` in `utils/key-mapper.ts` (FR-1).
+- Keep the `J` = left tab, `K` = right tab mapping in one constant, `TAB_SWITCH_DIRECTIONS` in `utils/key-interpreter.ts` (FR-1).
 - Keep the Upstream MIT license and author credit in the README.
 
 ## Agent skills
