@@ -38,7 +38,7 @@ Checked on 2026-10-28.
 - **FR-1.** Tab direction follows Vimium: `J` = left tab, `K` = right tab. The mapping lives in one constant so it can be swapped.
 - **FR-2.** Switching wraps around: `Shift+K` on the last tab goes to the first, `Shift+J` on the first goes to the last.
 - **FR-3.** Switching stays within the current window.
-- **FR-3a.** Tab switching skips tabs with `hidden: true` (Firefox `tabs.hide()`; the property needs no permission). Tabs in a collapsed Chrome tab group stay in the cycle: detecting a collapsed group needs the `tabGroups` permission, which NFR-2 rules out. What Chrome shows when such a tab is activated is to be verified.
+- **FR-3a.** Tab switching skips tabs with `hidden: true` (Firefox `tabs.hide()`; the property needs no permission). It also skips tabs in a collapsed tab group (`tabGroups` permission, see NFR-2). If no other tab is left to switch to, nothing happens. Firefox support for the `tabGroups` API is to be verified; where the API is missing, collapsed groups stay in the cycle.
 - **FR-4.** `J`/`K` follow the same ignore rules as the other keys: no action while typing or while link-hint mode is active.
 
 ### 3.2 Keep: existing behavior
@@ -63,7 +63,7 @@ Checked on 2026-10-28.
 ## 4. Non-functional requirements
 
 - **NFR-1. Manifest V3** for both browsers.
-- **NFR-2. Permissions.** No API permissions. `tabs.query` and `tabs.update` work without the `tabs` permission because only tab `index` and `id` are used. Host access stays the content-script match `<all_urls>`.
+- **NFR-2. Permissions.** One API permission: `tabGroups`, to detect collapsed tab groups (FR-3a). `tabs.query` and `tabs.update` work without the `tabs` permission because only tab `index`, `id`, `hidden`, and `groupId` are used. Host access stays the content-script match `<all_urls>`.
 - **NFR-3. No network.** No remote code, analytics, or requests.
 - **NFR-4. Small.** The content script stays vanilla TypeScript with no UI framework.
 

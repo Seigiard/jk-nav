@@ -33,7 +33,7 @@ Tab switching needs a content script: the `commands` manifest API accepts only s
 
 ## Constraints
 
-- No API permissions. `tabs.query` and `tabs.update` work without the `tabs` permission because the code reads only tab `index` and `id`. Adding a permission changes the store review, so treat it as a product decision.
+- One API permission: `tabGroups`, to skip tabs in collapsed groups (spec FR-3a, NFR-2). `tabs.query` and `tabs.update` work without the `tabs` permission because the code reads only tab `index`, `id`, `hidden`, and `groupId`. Adding another permission changes the store review, so treat it as a product decision.
 - No network, remote code, or analytics.
 - The content script stays vanilla TypeScript with no UI framework.
 - Keep the `J` = left tab, `K` = right tab mapping in one constant (FR-1).

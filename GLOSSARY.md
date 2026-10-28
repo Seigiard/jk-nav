@@ -55,9 +55,9 @@ Activation of the Left tab or the Right tab in the current window. It wraps arou
 _Avoid_: tab navigation, tab cycling
 
 **Left tab**:
-The nearest tab to the left of the active tab in the tab strip, skipping hidden tabs; for the first tab, the last one.
+The nearest tab to the left of the active tab in the tab strip, skipping hidden tabs and tabs in collapsed groups; for the first tab, the last one.
 _Avoid_: previous tab (it also means the tab that was active before)
 
 **Right tab**:
-The nearest tab to the right of the active tab in the tab strip, skipping hidden tabs; for the last tab, the first one.
+The nearest tab to the right of the active tab in the tab strip, skipping hidden tabs and tabs in collapsed groups; for the last tab, the first one.
 _Avoid_: next tab
