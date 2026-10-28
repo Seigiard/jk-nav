@@ -2,11 +2,6 @@ import { describe, expect, it } from 'vitest';
 
 import { selectTabTarget, type TabInfo } from '../../utils/tab-target';
 
-type FlaggedTabInfo = TabInfo & {
-  hidden?: boolean;
-  inCollapsedGroup?: boolean;
-};
-
 const MIDDLE_ACTIVE_TABS: TabInfo[] = [
   { id: 303, index: 2, active: false },
   { id: 101, index: 0, active: false },
@@ -79,7 +74,7 @@ describe('selectTabTarget', () => {
 
   it('skips a hidden tab when moving Right', () => {
     // #given
-    const tabs: FlaggedTabInfo[] = [
+    const tabs: TabInfo[] = [
       { id: 101, index: 0, active: true },
       { id: 202, index: 1, active: false, hidden: true },
       { id: 303, index: 2, active: false },
@@ -94,7 +89,7 @@ describe('selectTabTarget', () => {
 
   it('skips a tab in a collapsed group when moving Right', () => {
     // #given
-    const tabs: FlaggedTabInfo[] = [
+    const tabs: TabInfo[] = [
       { id: 101, index: 0, active: true },
       { id: 202, index: 1, active: false, inCollapsedGroup: true },
       { id: 303, index: 2, active: false },
@@ -109,7 +104,7 @@ describe('selectTabTarget', () => {
 
   it('wraps Right past skipped tabs to the next visible tab', () => {
     // #given
-    const tabs: FlaggedTabInfo[] = [
+    const tabs: TabInfo[] = [
       { id: 101, index: 0, active: false, hidden: true },
       { id: 202, index: 1, active: false },
       { id: 303, index: 2, active: true },
@@ -125,7 +120,7 @@ describe('selectTabTarget', () => {
 
   it('returns no target when every other tab is skipped', () => {
     // #given
-    const tabs: FlaggedTabInfo[] = [
+    const tabs: TabInfo[] = [
       { id: 101, index: 0, active: true },
       { id: 202, index: 1, active: false, hidden: true },
       { id: 303, index: 2, active: false, inCollapsedGroup: true },

@@ -153,6 +153,19 @@ test('typing navigation keys in editable content changes only its text', async (
   });
 });
 
+test('j scrolls with a non-editable widget inside editable content focused', async () => {
+  await withFormPage(async (page) => {
+    // #given
+    await page.locator('#non-editable-widget').focus();
+
+    // #when
+    await page.keyboard.press('j');
+
+    // #then
+    expect(await page.evaluate(() => window.scrollY)).toBe(60);
+  });
+});
+
 test('typing navigation keys in an open shadow root text field changes only its value', async () => {
   await withFormPage(async (page) => {
     // #given

@@ -40,8 +40,14 @@ async function startContinuousScroll(page: Page, key: ScrollKey = 'j'): Promise<
   await page.keyboard.down(key);
   await page.keyboard.down(key);
   await page.waitForFunction(({ direction, position }) => (
-    direction === 'j' ? window.scrollY > position + 60 : window.scrollY < position - 60
+    direction === 'j' ? window.scrollY >= position + 120 : window.scrollY <= position - 120
   ), { direction: key, position: initialPosition });
+  const positionAfterRepeat = await page.evaluate(() => window.scrollY);
+  if (key === 'j') {
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(positionAfterRepeat);
+  } else {
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBeLessThan(positionAfterRepeat);
+  }
 }
 
 test('one KeyJ tap scrolls down exactly one step and then stays still', async () => {
@@ -96,9 +102,11 @@ test('a repeated KeyJ keydown starts Continuous scroll', async () => {
 
     // #when
     await page.keyboard.down('j');
+    await page.waitForFunction(() => window.scrollY >= 120);
+    const positionAfterRepeat = await page.evaluate(() => window.scrollY);
 
     // #then
-    await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(60);
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(positionAfterRepeat);
   } finally {
     await context.close();
   }

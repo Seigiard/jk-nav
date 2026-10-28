@@ -1,105 +1,15 @@
-import { chromium, expect, test, type BrowserContext, type Page, type Worker } from '@playwright/test';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { expect, test } from '@playwright/test';
 
-const extensionPath = path.resolve(fileURLToPath(new URL('../../.output/chrome-mv3', import.meta.url)));
-
-interface ChromeTab {
-  id?: number;
-}
-
-interface ChromeWindow {
-  id?: number;
-  tabs?: ChromeTab[];
-}
-
-interface ChromeExtensionApi {
-  tabs: {
-    create(options: { windowId: number; url: string; active?: boolean }, callback: (tab: ChromeTab) => void): void;
-    query(options: { windowId: number; active: boolean }, callback: (tabs: ChromeTab[]) => void): void;
-    update(tabId: number, options: { active: boolean }, callback: (tab: ChromeTab) => void): void;
-  };
-  windows: {
-    create(options: { url: string; focused: boolean }, callback: (window: ChromeWindow) => void): void;
-  };
-}
-
-interface TestWindow {
-  windowId: number;
-  tabIds: number[];
-}
-
-async function openExtensionContext(): Promise<BrowserContext> {
-  return chromium.launchPersistentContext('', {
-    channel: 'chromium',
-    headless: true,
-    args: [
-      `--disable-extensions-except=${extensionPath}`,
-      `--load-extension=${extensionPath}`,
-    ],
-  });
-}
-
-async function extensionServiceWorker(context: BrowserContext): Promise<Worker> {
-  return context.serviceWorkers()[0] ?? context.waitForEvent('serviceworker');
-}
-
-async function createTestWindow(worker: Worker, urls: string[]): Promise<TestWindow> {
-  return worker.evaluate(async (fixtureUrls) => {
-    const chromeApi = (globalThis as typeof globalThis & { chrome: ChromeExtensionApi }).chrome;
-    const createdWindow = await new Promise<ChromeWindow>((resolve) => {
-      chromeApi.windows.create({ url: fixtureUrls[0]!, focused: true }, resolve);
-    });
-    const windowId = createdWindow.id;
-    const firstTabId = createdWindow.tabs?.[0]?.id;
-
-    if (windowId === undefined || firstTabId === undefined) {
-      throw new Error('Chromium did not return the created window and tab IDs');
-    }
-
-    const tabIds = [firstTabId];
-    for (const url of fixtureUrls.slice(1)) {
-      const tab = await new Promise<ChromeTab>((resolve) => {
-        chromeApi.tabs.create({ windowId, url, active: false }, resolve);
-      });
-      if (tab.id === undefined) {
-        throw new Error('Chromium did not return the created tab ID');
-      }
-      tabIds.push(tab.id);
-    }
-
-    return { windowId, tabIds };
-  }, urls);
-}
-
-async function activateTab(worker: Worker, tabId: number): Promise<void> {
-  await worker.evaluate(async (id) => {
-    const chromeApi = (globalThis as typeof globalThis & { chrome: ChromeExtensionApi }).chrome;
-    await new Promise<ChromeTab>((resolve) => {
-      chromeApi.tabs.update(id, { active: true }, resolve);
-    });
-  }, tabId);
-}
-
-async function activeTabId(worker: Worker, windowId: number): Promise<number | null> {
-  return worker.evaluate(async (id) => {
-    const chromeApi = (globalThis as typeof globalThis & { chrome: ChromeExtensionApi }).chrome;
-    const tabs = await new Promise<ChromeTab[]>((resolve) => {
-      chromeApi.tabs.query({ windowId: id, active: true }, resolve);
-    });
-    return tabs[0]?.id ?? null;
-  }, windowId);
-}
-
-async function pageForUrl(context: BrowserContext, url: string): Promise<Page> {
-  await expect.poll(() => context.pages().some((page) => page.url() === url)).toBe(true);
-  const page = context.pages().find((candidate) => candidate.url() === url);
-  if (!page) {
-    throw new Error(`Chromium did not expose the fixture page ${url}`);
-  }
-  await page.waitForLoadState();
-  return page;
-}
+import {
+  activateTab,
+  createTestWindow,
+  extensionServiceWorker,
+  installTabSwitchTrace,
+  openExtensionContext,
+  pageForUrl,
+  queryActiveTabId,
+  readTabSwitchTrace,
+} from './extension-tabs';
 
 test('Shift+K on the last tab activates the first tab', async ({ baseURL }) => {
   // #given
@@ -117,7 +27,7 @@ test('Shift+K on the last tab activates the first tab', async ({ baseURL }) => {
     await lastPage.keyboard.press('Shift+K');
 
     // #then
-    await expect.poll(() => activeTabId(worker, testWindow.windowId)).toBe(firstTabId);
+    await expect.poll(() => queryActiveTabId(worker, testWindow.windowId)).toBe(firstTabId);
   } finally {
     await context.close();
   }
@@ -139,7 +49,7 @@ test('Shift+J on the first tab activates the last tab', async ({ baseURL }) => {
     await firstPage.keyboard.press('Shift+J');
 
     // #then
-    await expect.poll(() => activeTabId(worker, testWindow.windowId)).toBe(lastTabId);
+    await expect.poll(() => queryActiveTabId(worker, testWindow.windowId)).toBe(lastTabId);
   } finally {
     await context.close();
   }
@@ -166,8 +76,8 @@ test('a Tab switch stays in its current window', async ({ baseURL }) => {
 
     // #then
     await expect.poll(async () => ({
-      current: await activeTabId(worker, currentWindow.windowId),
-      other: await activeTabId(worker, otherWindow.windowId),
+      current: await queryActiveTabId(worker, currentWindow.windowId),
+      other: await queryActiveTabId(worker, otherWindow.windowId),
     })).toEqual({ current: currentRightTabId, other: otherFirstTabId });
   } finally {
     await context.close();
@@ -194,7 +104,7 @@ test('Shift+J switches tabs when the text field is not focused', async ({ baseUR
     await formPage.keyboard.press('Shift+J');
 
     // #then
-    await expect.poll(() => activeTabId(worker, testWindow.windowId)).toBe(firstTabId);
+    await expect.poll(() => queryActiveTabId(worker, testWindow.windowId)).toBe(firstTabId);
   } finally {
     await context.close();
   }
@@ -208,23 +118,93 @@ test('Shift+J typed in a text field inserts J without switching tabs', async ({ 
     const urls = [
       `${baseURL}/tall-page.html?typing-control=0`,
       `${baseURL}/form-controls.html?typing-control=1`,
+      `${baseURL}/tall-page.html?typing-control=2`,
     ];
     const testWindow = await createTestWindow(worker, urls);
     const textTabId = testWindow.tabIds[1]!;
+    const rightTabId = testWindow.tabIds[2]!;
     await activateTab(worker, textTabId);
     const textPage = await pageForUrl(context, urls[1]!);
     const textField = textPage.locator('#search');
     await textField.focus();
+    await installTabSwitchTrace(worker);
 
     // #when
     await textPage.keyboard.press('Shift+J');
+    await textPage.locator('#button').focus();
+    await textPage.keyboard.press('Shift+K');
 
     // #then
     await expect.poll(async () => ({
       value: await textField.inputValue(),
-      activeTabId: await activeTabId(worker, testWindow.windowId),
-    })).toEqual({ value: 'J', activeTabId: textTabId });
+      trace: await readTabSwitchTrace(worker),
+      activeTabId: await queryActiveTabId(worker, testWindow.windowId),
+    })).toEqual({
+      value: 'J',
+      trace: {
+        messages: [{ type: 'tabSwitch', direction: 'right' }],
+        requestedTabIds: [rightTabId],
+      },
+      activeTabId: rightTabId,
+    });
   } finally {
     await context.close();
   }
 });
+
+for (const keyCase of [
+  {
+    syntheticCode: 'KeyJ',
+    syntheticKey: 'J',
+    trustedKey: 'Shift+K',
+    trustedDirection: 'right',
+    expectedTabIndex: 2,
+  },
+  {
+    syntheticCode: 'KeyK',
+    syntheticKey: 'K',
+    trustedKey: 'Shift+J',
+    trustedDirection: 'left',
+    expectedTabIndex: 0,
+  },
+] as const) {
+  test(`a synthetic Shift+${keyCase.syntheticKey} cannot switch tabs`, async ({ baseURL }) => {
+    // #given
+    const context = await openExtensionContext();
+    try {
+      const worker = await extensionServiceWorker(context);
+      const urls = [0, 1, 2].map((index) => `${baseURL}/tall-page.html?untrusted-${keyCase.syntheticKey}=${index}`);
+      const testWindow = await createTestWindow(worker, urls);
+      const middleTabId = testWindow.tabIds[1]!;
+      const expectedTabId = testWindow.tabIds[keyCase.expectedTabIndex]!;
+      await activateTab(worker, middleTabId);
+      const middlePage = await pageForUrl(context, urls[1]!);
+      await installTabSwitchTrace(worker);
+
+      // #when
+      await middlePage.evaluate(({ code, key }) => {
+        document.dispatchEvent(new KeyboardEvent('keydown', {
+          bubbles: true,
+          code,
+          key,
+          shiftKey: true,
+        }));
+      }, { code: keyCase.syntheticCode, key: keyCase.syntheticKey });
+      await middlePage.keyboard.press(keyCase.trustedKey);
+
+      // #then
+      await expect.poll(async () => ({
+        trace: await readTabSwitchTrace(worker),
+        activeTabId: await queryActiveTabId(worker, testWindow.windowId),
+      })).toEqual({
+        trace: {
+          messages: [{ type: 'tabSwitch', direction: keyCase.trustedDirection }],
+          requestedTabIds: [expectedTabId],
+        },
+        activeTabId: expectedTabId,
+      });
+    } finally {
+      await context.close();
+    }
+  });
+}
