@@ -186,6 +186,9 @@ function handleKeyAction(action: KeyAction, event: KeyboardEvent): void {
     case 'forward':
       window.history.forward();
       return;
+    case 'tabSwitch':
+      void browser.runtime.sendMessage({ type: 'tabSwitch', direction: action.direction }).catch(() => undefined);
+      return;
     case 'enterLinkHints':
       event.preventDefault();
       enterLinkHintMode();
