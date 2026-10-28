@@ -1,4 +1,5 @@
 import { resolveKey, type KeyAction, type KeyInput } from '../utils/key-mapper';
+import { createTabSwitchMessage } from '../utils/tab-switch';
 
 export default defineContentScript({
   matches: ['<all_urls>'],
@@ -195,7 +196,7 @@ function handleKeyAction(action: KeyAction, event: KeyboardEvent): void {
       if (!event.isTrusted) {
         return;
       }
-      void browser.runtime.sendMessage({ type: 'tabSwitch', direction: action.direction }).catch(() => undefined);
+      void browser.runtime.sendMessage(createTabSwitchMessage(action.direction)).catch(() => undefined);
       return;
     case 'enterLinkHints':
       event.preventDefault();

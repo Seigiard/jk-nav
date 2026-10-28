@@ -1,4 +1,4 @@
-import type { TabDirection } from './tab-target';
+import type { TabDirection } from './tab-switch';
 
 export interface KeyInput {
   code: string;
