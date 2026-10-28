@@ -150,15 +150,15 @@ test('a Tab switch stays in its current window', async ({ baseURL }) => {
   const context = await openExtensionContext();
   try {
     const worker = await extensionServiceWorker(context);
-    const currentUrls = [0, 1].map((index) => `${baseURL}/tall-page.html?current-window=${index}`);
+    const currentUrls = [0, 1, 2].map((index) => `${baseURL}/tall-page.html?current-window=${index}`);
     const otherUrls = [0, 1].map((index) => `${baseURL}/tall-page.html?other-window=${index}`);
     const currentWindow = await createTestWindow(worker, currentUrls);
     const otherWindow = await createTestWindow(worker, otherUrls);
-    const currentFirstTabId = currentWindow.tabIds[0]!;
-    const currentLastTabId = currentWindow.tabIds[1]!;
-    const otherLastTabId = otherWindow.tabIds[1]!;
-    await activateTab(worker, otherLastTabId);
-    await activateTab(worker, currentLastTabId);
+    const currentMiddleTabId = currentWindow.tabIds[1]!;
+    const currentRightTabId = currentWindow.tabIds[2]!;
+    const otherFirstTabId = otherWindow.tabIds[0]!;
+    await activateTab(worker, otherFirstTabId);
+    await activateTab(worker, currentMiddleTabId);
     const currentPage = await pageForUrl(context, currentUrls[1]!);
 
     // #when
@@ -168,7 +168,7 @@ test('a Tab switch stays in its current window', async ({ baseURL }) => {
     await expect.poll(async () => ({
       current: await activeTabId(worker, currentWindow.windowId),
       other: await activeTabId(worker, otherWindow.windowId),
-    })).toEqual({ current: currentFirstTabId, other: otherLastTabId });
+    })).toEqual({ current: currentRightTabId, other: otherFirstTabId });
   } finally {
     await context.close();
   }
