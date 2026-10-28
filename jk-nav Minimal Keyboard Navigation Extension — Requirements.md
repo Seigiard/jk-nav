@@ -50,7 +50,9 @@ Checked on 2026-10-28.
 - **FR-7.** Keys with `Ctrl`, `Alt`, or `Meta` held are ignored, so `Ctrl+F` opens the browser's find bar again. Link-hint mode opens only on a plain f key press with no modifiers held.
 - **FR-8.** Keys are ignored during IME composition (`event.isComposing`).
 - **FR-9.** Continuous scroll stops on `keyup` of `j`/`k` and on window `blur`.
-- **FR-10.** Typing detection uses `event.composedPath()` to catch Shadow DOM inputs and `contenteditable`. A focused `<button>` does not count as typing.
+- **FR-10.** Typing detection uses `event.composedPath()` to catch Shadow DOM inputs and `contenteditable`. A focused `<button>` does not count as typing. Only fields that take text count: `<textarea>`, `<select>`, `contenteditable`, and `<input>` of any type except `checkbox`, `radio`, `range`, `color`, `file`, `button`, `submit`, `reset`, `image`.
+- **FR-11.** Keys are matched by physical position (`event.code`, QWERTY names), not by the typed character (`event.key`). Case comes only from `Shift`. So all keys work in a non-Latin layout such as Russian, and Caps Lock does not turn `j` into `J`. This applies to Hint codes too.
+- **FR-12.** A tap of `j`/`k` scrolls exactly one step (`SCROLL_AMOUNT`). Continuous scroll starts only on the first auto-repeat `keydown` (`event.repeat`) and runs until FR-9 stops it. This replaces upstream behavior, where scrolling starts on the first `keydown` and a tap scrolls a distance that depends on how long the key was down.
 
 ### 3.4 Later (v2)
 
