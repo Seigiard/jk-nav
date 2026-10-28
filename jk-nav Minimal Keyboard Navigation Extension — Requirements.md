@@ -38,6 +38,7 @@ Checked on 2026-10-28.
 - **FR-1.** Tab direction follows Vimium: `J` = left tab, `K` = right tab. The mapping lives in one constant so it can be swapped.
 - **FR-2.** Switching wraps around: `Shift+K` on the last tab goes to the first, `Shift+J` on the first goes to the last.
 - **FR-3.** Switching stays within the current window.
+- **FR-3a.** Tab switching skips tabs with `hidden: true` (Firefox `tabs.hide()`; the property needs no permission). Tabs in a collapsed Chrome tab group stay in the cycle: detecting a collapsed group needs the `tabGroups` permission, which NFR-2 rules out. What Chrome shows when such a tab is activated is to be verified.
 - **FR-4.** `J`/`K` follow the same ignore rules as the other keys: no action while typing or while link-hint mode is active.
 
 ### 3.2 Keep: existing behavior
@@ -99,7 +100,7 @@ wxt.config.ts     // name, version, gecko id
 
 ## 7. Known limitations
 
-- **Restricted pages.** No effect on `chrome://`, `about:`, Chrome Web Store, `addons.mozilla.org`, PDF viewers. Browsers block content scripts there.
+- **Restricted pages.** No effect on `chrome://`, `about:`, Chrome Web Store, `addons.mozilla.org`, PDF viewers. Browsers block content scripts there. So a tab switch that lands on a restricted page stops there: `J`/`K` do nothing on it, and the user leaves it with the browser's own shortcut (`Ctrl+Tab`).
 - **Firefox host access.** In Firefox MV3 the user may need to allow access to all websites once after install. To verify.
 - **Site conflicts.** Sites with their own `j`/`k` shortcuts (Gmail, GitHub, X) are overridden while focus is outside text fields. Accepted for v1.
 
