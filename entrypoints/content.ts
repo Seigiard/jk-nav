@@ -4,13 +4,15 @@ export default defineContentScript({
   matches: ['<all_urls>'],
   main() {
 /**
- * Vim-Style Page Navigation for Chrome
- * 
+ * Vim-Style Page Navigation
+ *
  * Navigation controls:
  * - j: Scroll down
  * - k: Scroll up
  * - gg: Go to top of page
  * - G: Go to bottom of page
+ * - Shift+J: Switch to the Left tab
+ * - Shift+K: Switch to the Right tab
  * - f: Enter link-hint mode, display 2-letter codes for links
  *     (type the code to navigate to that link)
  * - H: Go back in browsing history
@@ -190,6 +192,9 @@ function handleKeyAction(action: KeyAction, event: KeyboardEvent): void {
       window.history.forward();
       return;
     case 'tabSwitch':
+      if (!event.isTrusted) {
+        return;
+      }
       void browser.runtime.sendMessage({ type: 'tabSwitch', direction: action.direction }).catch(() => undefined);
       return;
     case 'enterLinkHints':
@@ -483,17 +488,25 @@ function clearLinkHints() {
  * to avoid intercepting keyboard inputs when typing
  */
 function isUserTyping(event: KeyboardEvent): boolean {
-  return event.composedPath().some((target) => {
+  for (const target of event.composedPath()) {
     if (!(target instanceof HTMLElement)) {
-      return false;
+      continue;
     }
 
-    if (target.isContentEditable || target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement) {
+    if (target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement) {
       return true;
     }
 
-    return target instanceof HTMLInputElement && !NON_TYPING_INPUT_TYPES.has(target.type);
-  });
+    if (target instanceof HTMLInputElement) {
+      return !NON_TYPING_INPUT_TYPES.has(target.type);
+    }
+
+    if (target.hasAttribute('contenteditable')) {
+      return target.contentEditable !== 'false';
+    }
+  }
+
+  return false;
 }
 
   },
