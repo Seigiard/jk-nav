@@ -76,20 +76,18 @@ export default defineContentScript({
       };
     }
 
-    function applyResult(result: KeyResult): void {
-      for (const effect of result.effects) {
-        applyEffect(effect);
-      }
-
+    function applyResult(result: KeyResult, event?: KeyboardEvent): void {
       if (result.consumed) {
         // The adapter owns the browser event. The interpreter owns the decision.
-        currentEvent?.preventDefault();
+        event?.preventDefault();
+      }
+
+      for (const effect of result.effects) {
+        applyEffect(effect, event);
       }
     }
 
-    let currentEvent: KeyboardEvent | null = null;
-
-    function applyEffect(effect: KeyEffect): void {
+    function applyEffect(effect: KeyEffect, event?: KeyboardEvent): void {
       switch (effect.kind) {
         case 'scrollStep':
           window.scrollBy({
@@ -120,7 +118,7 @@ export default defineContentScript({
           return;
         case 'collectLinkHintTargets':
           visibleElements = collectVisibleElements();
-          applyResult(keyInterpreter.linkHintTargets(visibleElements.length));
+          applyResult(keyInterpreter.linkHintTargets(visibleElements.length), event);
           return;
         case 'showLinkHints':
           showLinkHints(effect.codes);
@@ -298,9 +296,7 @@ export default defineContentScript({
     }
 
     document.addEventListener('keydown', (event) => {
-      currentEvent = event;
-      applyResult(keyInterpreter.press(toKeyPress(event)));
-      currentEvent = null;
+      applyResult(keyInterpreter.press(toKeyPress(event)), event);
     });
 
     document.addEventListener('keyup', (event) => {
