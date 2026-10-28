@@ -1,3 +1,5 @@
+import type { TabDirection } from './tab-target';
+
 export interface KeyInput {
   code: string;
   repeat?: boolean;
@@ -22,9 +24,15 @@ export type KeyAction =
   | { kind: 'pendingG' }
   | { kind: 'enterLinkHints' }
   | { kind: 'hintInput'; char: string }
-  | { kind: 'exitLinkHints' };
+  | { kind: 'exitLinkHints' }
+  | { kind: 'tabSwitch'; direction: TabDirection };
 
 const NONE: KeyAction = { kind: 'none' };
+
+export const TAB_SWITCH_DIRECTIONS: Record<string, TabDirection> = {
+  KeyJ: 'left',
+  KeyK: 'right',
+};
 
 export function resolveKey(input: KeyInput): KeyAction {
   if (
@@ -54,6 +62,11 @@ export function resolveKey(input: KeyInput): KeyAction {
   }
 
   if (input.shift) {
+    const tabDirection = TAB_SWITCH_DIRECTIONS[input.code];
+    if (tabDirection !== undefined) {
+      return { kind: 'tabSwitch', direction: tabDirection };
+    }
+
     switch (input.code) {
       case 'KeyG':
         return { kind: 'bottom' };
