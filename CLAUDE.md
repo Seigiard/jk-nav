@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project state
 
-The spec is `jk-nav Minimal Keyboard Navigation Extension — Requirements.md`. Read it before any work; it is the source of truth for keys, FR/NFR numbers, and acceptance criteria. Section 9 lists the setup steps.
+The spec is `docs/spec.md`. Read it before any work; it is the source of truth for keys, FR/NFR numbers, and acceptance criteria. Section 9 lists the setup steps.
 
 This repo is `Seigiard/jk-nav`, a GitHub fork of `johnnymatthews/vim-style-page-navigation` (MIT; remote `upstream`). The goal is a port to Manifest V3 with WXT, so one codebase builds for Chrome and Firefox. The port adds `Shift+J`/`Shift+K` tab switching and fixes the upstream bugs listed in spec section 2. The WXT port has not started: the code is still upstream's plain `manifest.json` + `page-navigator.js`, with no `package.json`.
 
