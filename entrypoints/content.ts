@@ -501,9 +501,7 @@ function isUserTyping(event: KeyboardEvent): boolean {
       return !NON_TYPING_INPUT_TYPES.has(target.type);
     }
 
-    if (target.hasAttribute('contenteditable')) {
-      return target.contentEditable !== 'false';
-    }
+    return target.isContentEditable;
   }
 
   return false;
