@@ -38,3 +38,17 @@ Tab switching needs a content script: the `commands` manifest API accepts only s
 - The content script stays vanilla TypeScript with no UI framework.
 - Keep the `J` = left tab, `K` = right tab mapping in one constant (FR-1).
 - Keep the upstream MIT license and author credit in the README.
+
+## Agent skills
+
+### Issue tracker
+
+Issues live in GitHub Issues on `Seigiard/jk-nav`, through the `gh` CLI. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+The five default labels: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: one `GLOSSARY.md` and `docs/adr/` at the repo root. See `docs/agents/domain.md`.
