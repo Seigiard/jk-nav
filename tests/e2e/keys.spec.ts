@@ -1,6 +1,6 @@
 import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 
-import { openExtensionContext } from './extension-tabs';
+import { openExtensionContext, waitForContentScriptReady } from './extension-tabs';
 
 interface SyntheticKey {
   key: string;
@@ -21,6 +21,7 @@ async function openExtensionPage(fixturePath: string): Promise<ExtensionPage> {
   const context = await openExtensionContext();
   const page = await context.newPage();
   await page.goto(fixturePath);
+  await waitForContentScriptReady(page);
   return { context, page };
 }
 

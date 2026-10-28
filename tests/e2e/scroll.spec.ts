@@ -1,6 +1,6 @@
 import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 
-import { openExtensionContext } from './extension-tabs';
+import { openExtensionContext, waitForContentScriptReady } from './extension-tabs';
 
 type ScrollKey = 'j' | 'k';
 
@@ -20,7 +20,7 @@ async function openExtensionPage(): Promise<ExtensionPage> {
   const context = await openExtensionContext();
   const page = await context.newPage();
   await page.goto('/tall-page.html');
-  await page.locator('#vimnav-styles').waitFor({ state: 'attached' });
+  await waitForContentScriptReady(page);
   return { context, page };
 }
 

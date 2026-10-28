@@ -103,7 +103,12 @@ export async function pageForUrl(context: BrowserContext, url: string): Promise<
     throw new Error(`Chromium did not expose the fixture page ${url}`);
   }
   await page.waitForLoadState();
+  await waitForContentScriptReady(page);
   return page;
+}
+
+export async function waitForContentScriptReady(page: Page): Promise<void> {
+  await page.locator('#vimnav-styles').waitFor({ state: 'attached' });
 }
 
 export async function installTabSwitchTrace(worker: Worker): Promise<void> {

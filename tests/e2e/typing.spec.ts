@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 
-import { openExtensionContext } from './extension-tabs';
+import { openExtensionContext, waitForContentScriptReady } from './extension-tabs';
 
 async function withFormPage(run: (page: Page) => Promise<void>): Promise<void> {
   const context = await openExtensionContext();
@@ -8,6 +8,7 @@ async function withFormPage(run: (page: Page) => Promise<void>): Promise<void> {
   try {
     const page = await context.newPage();
     await page.goto('/form-controls.html');
+    await waitForContentScriptReady(page);
     await run(page);
   } finally {
     await context.close();
@@ -20,6 +21,7 @@ async function withDesignModePage(run: (page: Page) => Promise<void>): Promise<v
   try {
     const page = await context.newPage();
     await page.goto('/design-mode.html');
+    await waitForContentScriptReady(page);
     await run(page);
   } finally {
     await context.close();
