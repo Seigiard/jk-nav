@@ -41,7 +41,7 @@ export class LinkHintMode {
     }, []);
 
     if (visible.length === 0) {
-      return { kind: 'cancel', consumed: this.prefix !== '' };
+      return { kind: 'cancel', consumed: true };
     }
 
     this.prefix = nextPrefix;
