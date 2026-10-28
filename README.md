@@ -4,7 +4,7 @@
 one Manifest V3 codebase for Chrome and Firefox.
 
 `jk-nav` is forked from [Upstream](https://github.com/johnnymatthews/vim-style-page-navigation),
-the Vim-style page navigation extension by [Johnny Matthews](https://github.com/johnnymatthews).
+the Vim-style page navigation extension by [@johnnymatthews](https://github.com/johnnymatthews).
 It keeps Upstream's page controls and adds keyboard tab switching.
 
 ## Keys
@@ -78,7 +78,7 @@ other API permission.
 ## Credits and license
 
 The original project is [Upstream](https://github.com/johnnymatthews/vim-style-page-navigation)
-by [Johnny Matthews](https://github.com/johnnymatthews). Upstream was inspired
+by [@johnnymatthews](https://github.com/johnnymatthews). Upstream was inspired
 by the excellent [Vimium FF](https://addons.mozilla.org/en-CA/firefox/addon/vimium-ff/)
 by [Phil Crosby](https://addons.mozilla.org/en-CA/firefox/user/14971172/) and
 [Stephen Blott](https://addons.mozilla.org/en-CA/firefox/user/12979436/).
