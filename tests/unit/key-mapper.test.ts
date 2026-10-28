@@ -22,9 +22,9 @@ interface MappingCase {
 
 const UPSTREAM_KEY_CASES: MappingCase[] = [
   { name: 'KeyJ scrolls down', input: { code: 'KeyJ' }, expected: { kind: 'scroll', direction: 1 } },
-  { name: 'Shift+KeyJ has no action', input: { code: 'KeyJ', shift: true }, expected: { kind: 'none' } },
+  { name: 'Shift+KeyJ switches to the Left tab', input: { code: 'KeyJ', shift: true }, expected: { kind: 'tabSwitch', direction: 'left' } },
   { name: 'KeyK scrolls up', input: { code: 'KeyK' }, expected: { kind: 'scroll', direction: -1 } },
-  { name: 'Shift+KeyK has no action', input: { code: 'KeyK', shift: true }, expected: { kind: 'none' } },
+  { name: 'Shift+KeyK switches to the Right tab', input: { code: 'KeyK', shift: true }, expected: { kind: 'tabSwitch', direction: 'right' } },
   { name: 'KeyG starts the g sequence', input: { code: 'KeyG' }, expected: { kind: 'pendingG' } },
   { name: 'Shift+KeyG goes to the bottom', input: { code: 'KeyG', shift: true }, expected: { kind: 'bottom' } },
   { name: 'KeyH has no action', input: { code: 'KeyH' }, expected: { kind: 'none' } },
