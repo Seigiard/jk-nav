@@ -2,6 +2,11 @@ import { describe, expect, it } from 'vitest';
 
 import { selectTabTarget, type TabInfo } from '../../utils/tab-target';
 
+type FlaggedTabInfo = TabInfo & {
+  hidden?: boolean;
+  inCollapsedGroup?: boolean;
+};
+
 const MIDDLE_ACTIVE_TABS: TabInfo[] = [
   { id: 303, index: 2, active: false },
   { id: 101, index: 0, active: false },
@@ -64,6 +69,67 @@ describe('selectTabTarget', () => {
   it('returns no target for a window with one tab', () => {
     // #given
     const tabs: TabInfo[] = [{ id: 101, index: 0, active: true }];
+
+    // #when
+    const target = selectTabTarget(tabs, 'right');
+
+    // #then
+    expect(target).toBeNull();
+  });
+
+  it('skips a hidden tab when moving Right', () => {
+    // #given
+    const tabs: FlaggedTabInfo[] = [
+      { id: 101, index: 0, active: true },
+      { id: 202, index: 1, active: false, hidden: true },
+      { id: 303, index: 2, active: false },
+    ];
+
+    // #when
+    const target = selectTabTarget(tabs, 'right');
+
+    // #then
+    expect(target).toBe(303);
+  });
+
+  it('skips a tab in a collapsed group when moving Right', () => {
+    // #given
+    const tabs: FlaggedTabInfo[] = [
+      { id: 101, index: 0, active: true },
+      { id: 202, index: 1, active: false, inCollapsedGroup: true },
+      { id: 303, index: 2, active: false },
+    ];
+
+    // #when
+    const target = selectTabTarget(tabs, 'right');
+
+    // #then
+    expect(target).toBe(303);
+  });
+
+  it('wraps Right past skipped tabs to the next visible tab', () => {
+    // #given
+    const tabs: FlaggedTabInfo[] = [
+      { id: 101, index: 0, active: false, hidden: true },
+      { id: 202, index: 1, active: false },
+      { id: 303, index: 2, active: true },
+      { id: 404, index: 3, active: false, inCollapsedGroup: true },
+    ];
+
+    // #when
+    const target = selectTabTarget(tabs, 'right');
+
+    // #then
+    expect(target).toBe(202);
+  });
+
+  it('returns no target when every other tab is skipped', () => {
+    // #given
+    const tabs: FlaggedTabInfo[] = [
+      { id: 101, index: 0, active: true },
+      { id: 202, index: 1, active: false, hidden: true },
+      { id: 303, index: 2, active: false, inCollapsedGroup: true },
+    ];
 
     // #when
     const target = selectTabTarget(tabs, 'right');
