@@ -157,7 +157,7 @@ export function createKeyInterpreter(): KeyInterpreter {
         };
       case 'cancel':
         inLinkHintMode = false;
-        return { effects: [{ kind: 'exitLinkHints' }], consumed: result.consumed };
+        return { effects: [{ kind: 'exitLinkHints' }], consumed: true };
     }
   }
 

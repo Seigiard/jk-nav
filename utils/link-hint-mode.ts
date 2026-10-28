@@ -5,7 +5,7 @@ const MAX_HINT_CODES = HINT_CHARS.length * HINT_CHARS.length;
 export type LinkHintResult =
   | { kind: 'narrow'; visible: number[] }
   | { kind: 'activate'; index: number }
-  | { kind: 'cancel'; consumed: boolean };
+  | { kind: 'cancel' };
 
 export class LinkHintMode {
   private codes: string[] = [];
@@ -41,7 +41,7 @@ export class LinkHintMode {
     }, []);
 
     if (visible.length === 0) {
-      return { kind: 'cancel', consumed: true };
+      return { kind: 'cancel' };
     }
 
     this.prefix = nextPrefix;
