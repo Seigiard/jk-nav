@@ -262,16 +262,20 @@ describe('createKeyInterpreter', () => {
     expect(result).toEqual({ effects: [{ kind: 'showLinkHints', codes: ['aa', 'ab', 'ac'] }], consumed: false });
   });
 
-  it('shows no codes but enters Link-hint mode for zero targets', () => {
+  it('does not enter Link-hint mode for zero targets', () => {
     // #given
     const interpreter = createKeyInterpreter();
     interpreter.press(key({ code: 'KeyF' }));
 
     // #when
-    const result = interpreter.linkHintTargets(0);
+    const linkHintResult = interpreter.linkHintTargets(0);
+    const nextKeyResult = interpreter.press(key({ code: 'KeyJ' }));
 
     // #then
-    expect(result).toEqual({ effects: [{ kind: 'showLinkHints', codes: [] }], consumed: false });
+    expect({ linkHintResult, nextKeyResult }).toEqual({
+      linkHintResult: { effects: [], consumed: false },
+      nextKeyResult: { effects: [{ kind: 'scrollStep', direction: 1 }], consumed: false },
+    });
   });
 
   it('narrows Link hints to target indices with the first character', () => {
@@ -347,7 +351,7 @@ describe('createKeyInterpreter', () => {
     expect(result).toEqual({ effects: [{ kind: 'exitLinkHints' }], consumed: true });
   });
 
-  it('exits without consuming a first Hint character that matches no code', () => {
+  it('exits and consumes a first Hint character that matches no code', () => {
     // #given
     const interpreter = createKeyInterpreter();
     interpreter.press(key({ code: 'KeyF' }));
@@ -357,7 +361,7 @@ describe('createKeyInterpreter', () => {
     const result = interpreter.press(key({ code: 'KeyB' }));
 
     // #then
-    expect(result).toEqual({ effects: [{ kind: 'exitLinkHints' }], consumed: false });
+    expect(result).toEqual({ effects: [{ kind: 'exitLinkHints' }], consumed: true });
   });
 
   it('leaves an unrelated Link-hint key to the page', () => {
