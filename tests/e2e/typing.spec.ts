@@ -85,6 +85,38 @@ test('typing navigation keys in a search field changes only its value', async ()
   });
 });
 
+test('navigation keys stay silent with a number field focused', async () => {
+  await withFormPage(async (page) => {
+    // #given
+    await page.locator('#number').focus();
+
+    // #when
+    await page.keyboard.type('jf');
+
+    // #then
+    expect({
+      scrollY: await page.evaluate(() => window.scrollY),
+      linkHints: await page.locator('.vimnav-link-hint').count(),
+    }).toEqual({ scrollY: 0, linkHints: 0 });
+  });
+});
+
+test('navigation keys stay silent with a date field focused', async () => {
+  await withFormPage(async (page) => {
+    // #given
+    await page.locator('#date').focus();
+
+    // #when
+    await page.keyboard.type('jf');
+
+    // #then
+    expect({
+      scrollY: await page.evaluate(() => window.scrollY),
+      linkHints: await page.locator('.vimnav-link-hint').count(),
+    }).toEqual({ scrollY: 0, linkHints: 0 });
+  });
+});
+
 test('typing navigation keys in a text area changes only its value', async () => {
   await withFormPage(async (page) => {
     // #given
