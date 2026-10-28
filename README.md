@@ -59,6 +59,9 @@ npm run zip            # Chrome store package
 npm run zip:firefox    # Firefox store package
 ```
 
+Before a release, check both packages by hand in Chrome and Firefox:
+[docs/release-check.md](docs/release-check.md).
+
 ## Permissions
 
 `jk-nav` requests the `tabGroups` permission. It uses this permission to detect
