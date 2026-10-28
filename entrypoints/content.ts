@@ -1,3 +1,5 @@
+import { resolveKey, type KeyAction, type KeyInput } from '../utils/key-mapper';
+
 export default defineContentScript({
   matches: ['<all_urls>'],
   main() {
@@ -19,7 +21,7 @@ export default defineContentScript({
 const SCROLL_AMOUNT = 60;
 
 // To track multi-key sequences (for "gg")
-let keySequence = '';
+let pendingG = false;
 let keySequenceTimer: ReturnType<typeof setTimeout> | null = null;
 const KEY_SEQUENCE_TIMEOUT = 1000; // 1 second timeout for key sequence
 
@@ -114,97 +116,109 @@ function stopContinuousScroll() {
   scrollDirection = 0;
 }
 
+function clearPendingG(): void {
+  pendingG = false;
+  if (keySequenceTimer) {
+    clearTimeout(keySequenceTimer);
+    keySequenceTimer = null;
+  }
+}
+
+function startPendingG(): void {
+  if (keySequenceTimer) {
+    clearTimeout(keySequenceTimer);
+  }
+  pendingG = true;
+  keySequenceTimer = setTimeout(() => {
+    pendingG = false;
+    keySequenceTimer = null;
+  }, KEY_SEQUENCE_TIMEOUT);
+}
+
+function toKeyInput(event: KeyboardEvent): KeyInput {
+  return {
+    code: event.code,
+    shift: event.shiftKey,
+    ctrl: event.ctrlKey,
+    alt: event.altKey,
+    meta: event.metaKey,
+    isComposing: event.isComposing,
+    typing: isUserTyping(event),
+    linkHintMode: isLinkHintMode,
+    pendingG,
+  };
+}
+
+function isIgnoredInput(input: KeyInput): boolean {
+  return input.ctrl || input.alt || input.meta || input.isComposing || input.typing;
+}
+
+function handleKeyAction(action: KeyAction, event: KeyboardEvent): void {
+  switch (action.kind) {
+    case 'pendingG':
+      startPendingG();
+      return;
+    case 'top':
+      clearPendingG();
+      window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      });
+      return;
+    case 'bottom':
+      window.scrollTo({
+        top: document.body.scrollHeight,
+        behavior: 'smooth'
+      });
+      return;
+    case 'scroll':
+      window.scrollBy({
+        top: SCROLL_AMOUNT * action.direction,
+        behavior: 'auto'
+      });
+      if (!isScrolling || scrollDirection !== action.direction) {
+        startContinuousScroll(action.direction);
+      }
+      return;
+    case 'back':
+      window.history.back();
+      return;
+    case 'forward':
+      window.history.forward();
+      return;
+    case 'enterLinkHints':
+      event.preventDefault();
+      enterLinkHintMode();
+      return;
+    case 'none':
+      return;
+    case 'hintInput':
+    case 'exitLinkHints':
+      return;
+  }
+}
+
 // Keyboard event listeners
 document.addEventListener('keydown', (event) => {
-  // Ignore inputs when focus is on form elements
-  if (isUserTyping(event)) {
-    return;
-  }
-  
   // If in link hint mode, handle differently
   if (isLinkHintMode) {
     handleLinkHintModeKeypress(event);
     return;
   }
-  
-  // Clear key sequence after timeout
-  if (keySequenceTimer) {
-    clearTimeout(keySequenceTimer);
+
+  const keyInput = toKeyInput(event);
+  const action = resolveKey(keyInput);
+
+  if (!isIgnoredInput(keyInput) && (event.code !== 'KeyG' || event.shiftKey)) {
+    clearPendingG();
   }
-  
-  keySequenceTimer = setTimeout(() => {
-    keySequence = '';
-  }, KEY_SEQUENCE_TIMEOUT);
-  
-  // Add key to sequence
-  keySequence += event.key;
-  
-  // Handle navigation based on key presses
-  switch (event.key) {
-    case 'j':
-      // Scroll down
-      window.scrollBy({
-        top: SCROLL_AMOUNT,
-        behavior: 'auto' // Changed to 'auto' for faster initial response
-      });
-      
-      // Start continuous scrolling if key is held down
-      if (!isScrolling || scrollDirection !== 1) {
-        startContinuousScroll(1); // 1 for down
-      }
-      break;
-      
-    case 'k':
-      // Scroll up
-      window.scrollBy({
-        top: -SCROLL_AMOUNT,
-        behavior: 'auto' // Changed to 'auto' for faster initial response
-      });
-      
-      // Start continuous scrolling if key is held down
-      if (!isScrolling || scrollDirection !== -1) {
-        startContinuousScroll(-1); // -1 for up
-      }
-      break;
-      
-    case 'G':
-      // Go to bottom of page
-      window.scrollTo({
-        top: document.body.scrollHeight,
-        behavior: 'smooth'
-      });
-      break;
-      
-    case 'f':
-      // Enter link hint mode
-      event.preventDefault();
-      enterLinkHintMode();
-      break;
-      
-    case 'H':
-      // Go back in browsing history
-      window.history.back();
-      break;
-      
-    case 'L':
-      // Go forward in browsing history
-      window.history.forward();
-      break;
-  }
-  
-  // Handle the "gg" sequence to go to top of page
-  if (keySequence.endsWith('gg')) {
-    window.scrollTo({
-      top: 0,
-      behavior: 'smooth'
-    });
-    keySequence = '';
-  }
+
+  handleKeyAction(action, event);
 });
 
 // Add keyup event listener to stop scrolling when key is released
 document.addEventListener('keyup', (event) => {
-  if (event.key === 'j' || event.key === 'k') {
+  if (event.code === 'KeyJ' || event.code === 'KeyK') {
     stopContinuousScroll();
   }
 });
@@ -353,15 +367,19 @@ function createLinkHint(element: HTMLElement, hintCode: string, index: number, t
  * Handle keypresses while in link hint mode
  */
 function handleLinkHintModeKeypress(event: KeyboardEvent): void {
-  // Escape key exits link hint mode
-  if (event.key === 'Escape') {
+  const action = resolveKey(toKeyInput(event));
+
+  if (action.kind === 'exitLinkHints') {
     exitLinkHintMode();
     event.preventDefault();
     return;
   }
-  
-  // Add character to current hint code
-  const key = event.key.toLowerCase();
+
+  if (action.kind !== 'hintInput') {
+    return;
+  }
+
+  const key = action.char;
   
   // If this is the first character, filter to only show matching hints
   if (currentHintCode === '') {
