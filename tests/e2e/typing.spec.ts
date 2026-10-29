@@ -167,6 +167,7 @@ test('j scrolls with a non-editable widget inside editable content focused', asy
     await page.keyboard.press('j');
 
     // #then
+    await expect.poll(() => page.evaluate(() => window.scrollY), { timeout: 1000 }).toBe(60);
     expect(await page.evaluate(() => window.scrollY)).toBe(60);
   });
 });
@@ -204,6 +205,7 @@ test('j scrolls when the top document is not in designMode', async () => {
     await page.keyboard.press('j');
 
     // #then
+    await expect.poll(() => page.evaluate(() => window.scrollY), { timeout: 1000 }).toBe(60);
     expect({
       text: await editor.textContent(),
       scrollY: await page.evaluate(() => window.scrollY),
