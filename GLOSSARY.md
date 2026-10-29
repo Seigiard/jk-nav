@@ -32,7 +32,11 @@ _Avoid_: scroll amount, tick
 
 **Continuous scroll**:
 Scrolling that runs while `j` or `k` stays held after the system key repeat begins, and stops when the Key is released.
-_Avoid_: smooth scroll, auto-scroll
+_Avoid_: auto-scroll
+
+**Scroll animation**:
+The frame-by-frame movement that carries a Scroll step over its fixed distance.
+_Avoid_: smooth scroll
 
 ### Link hints
 
