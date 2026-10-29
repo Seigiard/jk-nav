@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>JK Nav many Link-hint targets fixture</title>
+    <style>
+      body {
+        position: relative;
+        margin: 0;
+      }
+
+      a {
+        position: absolute;
+        display: block;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        font-size: 1px;
+        line-height: 1px;
+      }
+    </style>
+  </head>
+  <body>
+    <script>
+      for (let index = 0; index < 901; index += 1) {
+        const target = document.createElement('a');
+        target.href = `#target-${index}`;
+        target.textContent = 'x';
+        target.style.left = `${index % 45}px`;
+        target.style.top = `${Math.floor(index / 45)}px`;
+        document.body.appendChild(target);
+      }
+    </script>
+  </body>
+</html>
