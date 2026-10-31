@@ -1,7 +1,7 @@
 import type { ScrollDirection } from './key-interpreter';
 
 export const SCROLL_STEP_PX = 200;
-export const SCROLL_STEP_DURATION_MS = 120;
+export const SCROLL_STEP_DURATION_MS = 300;
 export const CONTINUOUS_SCROLL_SPEED_PX_PER_S = 1500;
 export const CONTINUOUS_SCROLL_RAMP_MS = 100;
 export const MAX_FRAME_ELAPSED_MS = 50;
@@ -19,8 +19,8 @@ interface StepAnimation {
 
 export interface ScrollMotion {
   /**
-   * Starts this tap's own easeOutCubic animation over SCROLL_STEP_DURATION_MS
-   * (120 ms) by direction × SCROLL_STEP_PX; tap curves add up. Ignored during
+   * Starts this tap's own easeOutQuint animation over SCROLL_STEP_DURATION_MS
+   * (300 ms) by direction × SCROLL_STEP_PX; tap curves add up. Ignored during
    * Continuous scroll.
    */
   addStep(direction: ScrollDirection): void;
@@ -84,7 +84,7 @@ export function createScrollMotion(): ScrollMotion {
     for (const animation of stepAnimations) {
       const nextElapsedMs = Math.min(animation.elapsedMs + frameElapsedMs, SCROLL_STEP_DURATION_MS);
       distance += animation.direction * (
-        easeOutCubicDistance(nextElapsedMs) - easeOutCubicDistance(animation.elapsedMs)
+        easeOutQuintDistance(nextElapsedMs) - easeOutQuintDistance(animation.elapsedMs)
       );
       animation.elapsedMs = nextElapsedMs;
       if (nextElapsedMs < SCROLL_STEP_DURATION_MS) {
@@ -123,9 +123,9 @@ function clampElapsed(elapsedMs: number): number {
   return Math.min(Math.max(elapsedMs, 0), MAX_FRAME_ELAPSED_MS);
 }
 
-function easeOutCubicDistance(elapsedMs: number): number {
+function easeOutQuintDistance(elapsedMs: number): number {
   const progress = Math.min(Math.max(elapsedMs / SCROLL_STEP_DURATION_MS, 0), 1);
-  return SCROLL_STEP_PX * (1 - (1 - progress) ** 3);
+  return SCROLL_STEP_PX * (1 - (1 - progress) ** 5);
 }
 
 function continuousDistance(startMs: number, endMs: number): number {
