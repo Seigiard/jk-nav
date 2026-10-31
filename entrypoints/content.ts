@@ -4,13 +4,15 @@ import {
   type KeyPress,
   type KeyResult,
 } from '../utils/key-interpreter';
+import {
+  createScrollMotion,
+  SCROLL_STEP_PX,
+} from '../utils/scroll-motion';
 import { createTabSwitchMessage } from '../utils/tab-switch';
 
 export default defineContentScript({
   matches: ['<all_urls>'],
   main() {
-    const SCROLL_AMOUNT = 60;
-    const SCROLL_SPEED = 10;
     const NON_TYPING_INPUT_TYPES = new Set([
       'checkbox',
       'radio',
@@ -38,27 +40,62 @@ export default defineContentScript({
     }
 
     const keyInterpreter = createKeyInterpreter();
+    const scrollMotion = createScrollMotion();
     let linkHints: LinkHint[] = [];
     let visibleElements: VisibleElement[] = [];
-    let scrollInterval: ReturnType<typeof setInterval> | null = null;
+    let scrollAnimationFrame: number | null = null;
+    let previousScrollTimestamp: number | null = null;
 
     createHintStyles();
 
     function startContinuousScroll(direction: 1 | -1): void {
       stopContinuousScroll();
-      scrollInterval = setInterval(() => {
-        window.scrollBy({
-          top: SCROLL_AMOUNT * direction,
-          behavior: 'auto',
-        });
-      }, SCROLL_SPEED);
+      scrollMotion.startContinuous(direction);
+      scheduleScrollAnimation();
     }
 
     function stopContinuousScroll(): void {
-      if (scrollInterval !== null) {
-        clearInterval(scrollInterval);
-        scrollInterval = null;
+      scrollMotion.stopContinuous();
+      if (scrollAnimationFrame !== null) {
+        cancelAnimationFrame(scrollAnimationFrame);
+        scrollAnimationFrame = null;
       }
+      previousScrollTimestamp = null;
+    }
+
+    function scheduleScrollAnimation(): void {
+      if (scrollAnimationFrame === null) {
+        previousScrollTimestamp = null;
+        scrollAnimationFrame = requestAnimationFrame(animateScroll);
+      }
+    }
+
+    function animateScroll(timestamp: number): void {
+      scrollAnimationFrame = null;
+      const elapsedMs = previousScrollTimestamp === null ? 0 : timestamp - previousScrollTimestamp;
+      previousScrollTimestamp = timestamp;
+      const distance = scrollMotion.advance(elapsedMs);
+
+      if (distance !== 0) {
+        window.scrollBy({ top: distance, behavior: 'instant' });
+      }
+
+      if (scrollMotion.isMoving()) {
+        scrollAnimationFrame = requestAnimationFrame(animateScroll);
+      } else {
+        previousScrollTimestamp = null;
+      }
+    }
+
+    function scrollStep(direction: 1 | -1): void {
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        stopContinuousScroll();
+        window.scrollBy({ top: SCROLL_STEP_PX * direction, behavior: 'instant' });
+        return;
+      }
+
+      scrollMotion.addStep(direction);
+      scheduleScrollAnimation();
     }
 
     function toKeyPress(event: KeyboardEvent): KeyPress {
@@ -90,10 +127,7 @@ export default defineContentScript({
     function applyEffect(effect: KeyEffect, event?: KeyboardEvent): void {
       switch (effect.kind) {
         case 'scrollStep':
-          window.scrollBy({
-            top: SCROLL_AMOUNT * effect.direction,
-            behavior: 'auto',
-          });
+          scrollStep(effect.direction);
           return;
         case 'startContinuousScroll':
           startContinuousScroll(effect.direction);
@@ -102,9 +136,11 @@ export default defineContentScript({
           stopContinuousScroll();
           return;
         case 'scrollToTop':
+          stopContinuousScroll();
           window.scrollTo({ top: 0, behavior: 'smooth' });
           return;
         case 'scrollToBottom':
+          stopContinuousScroll();
           window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
           return;
         case 'historyBack':
@@ -117,6 +153,7 @@ export default defineContentScript({
           void browser.runtime.sendMessage(createTabSwitchMessage(effect.direction)).catch(() => undefined);
           return;
         case 'collectLinkHintTargets':
+          stopContinuousScroll();
           visibleElements = collectVisibleElements();
           applyResult(keyInterpreter.linkHintTargets(visibleElements.length), event);
           return;
