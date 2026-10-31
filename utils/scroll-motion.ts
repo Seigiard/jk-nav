@@ -1,17 +1,22 @@
 import type { ScrollDirection } from './key-interpreter';
 
-export const SCROLL_STEP_PX = 60;
-export const SCROLL_STEP_DURATION_MS = 100;
+export const SCROLL_STEP_PX = 200;
+export const SCROLL_STEP_DURATION_MS = 120;
 export const SCROLL_STEP_SPEED_PX_PER_MS = SCROLL_STEP_PX / SCROLL_STEP_DURATION_MS;
 export const CONTINUOUS_SCROLL_SPEED_PX_PER_S = 1500;
 export const CONTINUOUS_SCROLL_RAMP_MS = 100;
 export const MAX_FRAME_ELAPSED_MS = 50;
 
-const CONTINUOUS_INITIAL_SPEED_PX_PER_MS = SCROLL_STEP_SPEED_PX_PER_MS;
+const CONTINUOUS_INITIAL_SPEED_PX_PER_MS = 0.6;
 const CONTINUOUS_FINAL_SPEED_PX_PER_MS = CONTINUOUS_SCROLL_SPEED_PX_PER_S / 1000;
 const CONTINUOUS_RAMP_ACCELERATION_PX_PER_MS2 =
   (CONTINUOUS_FINAL_SPEED_PX_PER_MS - CONTINUOUS_INITIAL_SPEED_PX_PER_MS) / CONTINUOUS_SCROLL_RAMP_MS;
 const FRACTION_EPSILON = 1e-9;
+
+interface StepAnimation {
+  direction: ScrollDirection;
+  elapsedMs: number;
+}
 
 export interface ScrollMotion {
   /** One tap: adds direction × SCROLL_STEP_PX to the remaining distance. */
@@ -27,27 +32,27 @@ export interface ScrollMotion {
 }
 
 export function createScrollMotion(): ScrollMotion {
-  let remainingStepDistance = 0;
+  let stepAnimations: StepAnimation[] = [];
   let continuousDirection: ScrollDirection | null = null;
   let continuousElapsedMs = 0;
   let fractionalDistance = 0;
 
   function addStep(direction: ScrollDirection): void {
-    remainingStepDistance += direction * SCROLL_STEP_PX;
+    stepAnimations.push({ direction, elapsedMs: 0 });
     if (Math.abs(fractionalDistance) < FRACTION_EPSILON) {
       fractionalDistance = 0;
     }
   }
 
   function startContinuous(direction: ScrollDirection): void {
-    remainingStepDistance = 0;
+    stepAnimations = [];
     continuousDirection = direction;
     continuousElapsedMs = 0;
     fractionalDistance = 0;
   }
 
   function stopContinuous(): void {
-    remainingStepDistance = 0;
+    stepAnimations = [];
     continuousDirection = null;
     continuousElapsedMs = 0;
     fractionalDistance = 0;
@@ -64,22 +69,26 @@ export function createScrollMotion(): ScrollMotion {
       return wholePixels(distance * continuousDirection);
     }
 
-    if (remainingStepDistance === 0) {
+    if (stepAnimations.length === 0) {
       return 0;
     }
 
-    const direction = Math.sign(remainingStepDistance) as ScrollDirection;
-    const distance = Math.min(
-      Math.abs(remainingStepDistance),
-      SCROLL_STEP_SPEED_PX_PER_MS * frameElapsedMs,
-    );
-    remainingStepDistance -= direction * distance;
-    if (Math.abs(remainingStepDistance) < FRACTION_EPSILON) {
-      remainingStepDistance = 0;
+    let distance = 0;
+    const activeAnimations: StepAnimation[] = [];
+    for (const animation of stepAnimations) {
+      const nextElapsedMs = Math.min(animation.elapsedMs + frameElapsedMs, SCROLL_STEP_DURATION_MS);
+      distance += animation.direction * (
+        easeOutCubicDistance(nextElapsedMs) - easeOutCubicDistance(animation.elapsedMs)
+      );
+      animation.elapsedMs = nextElapsedMs;
+      if (nextElapsedMs < SCROLL_STEP_DURATION_MS) {
+        activeAnimations.push(animation);
+      }
     }
+    stepAnimations = activeAnimations;
 
-    const pixels = wholePixels(direction * distance);
-    if (remainingStepDistance === 0) {
+    const pixels = wholePixels(distance);
+    if (stepAnimations.length === 0) {
       const finalFractionCorrection = Math.round(fractionalDistance);
       fractionalDistance -= finalFractionCorrection;
       return pixels + finalFractionCorrection;
@@ -88,7 +97,7 @@ export function createScrollMotion(): ScrollMotion {
   }
 
   function isMoving(): boolean {
-    return continuousDirection !== null || remainingStepDistance !== 0;
+    return continuousDirection !== null || stepAnimations.length > 0;
   }
 
   function wholePixels(distance: number): number {
@@ -106,6 +115,11 @@ function clampElapsed(elapsedMs: number): number {
     return 0;
   }
   return Math.min(Math.max(elapsedMs, 0), MAX_FRAME_ELAPSED_MS);
+}
+
+function easeOutCubicDistance(elapsedMs: number): number {
+  const progress = Math.min(Math.max(elapsedMs / SCROLL_STEP_DURATION_MS, 0), 1);
+  return SCROLL_STEP_PX * (1 - (1 - progress) ** 3);
 }
 
 function continuousDistance(startMs: number, endMs: number): number {
