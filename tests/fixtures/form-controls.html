@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Typing controls fixture</title>
+    <style>
+      body { margin: 0; min-height: 4000px; }
+      form { display: grid; gap: 12px; padding: 24px; width: 320px; }
+      [contenteditable] { border: 1px solid; min-height: 48px; }
+    </style>
+  </head>
+  <body>
+    <form>
+      <button id="button" type="button">Button</button>
+      <label><input id="checkbox" type="checkbox"> Checkbox</label>
+      <label><input id="radio" type="radio" name="choice"> Radio</label>
+      <label>Slider <input id="range" type="range"></label>
+      <label>Search <input id="search" type="search"></label>
+      <label>Number <input id="number" type="number"></label>
+      <label>Date <input id="date" type="date"></label>
+      <label>Text area <textarea id="textarea"></textarea></label>
+      <div id="editable" contenteditable="true" aria-label="Editable content"></div>
+      <div contenteditable="true" aria-label="Editor with non-editable widget">
+        <span id="non-editable-widget" contenteditable="false" tabindex="0">Non-editable widget</span>
+      </div>
+      <div contenteditable="true" aria-label="Editor with inherited children">
+        <span id="editable-child-unset" tabindex="0">unset</span>
+        <span id="editable-child-inherit" contenteditable="inherit" tabindex="0">inherit</span>
+        <span id="editable-child-invalid" contenteditable="invalid" tabindex="0">invalid</span>
+      </div>
+      <label>
+        Drop-down list
+        <select id="select">
+          <option value="alpha">Alpha</option>
+          <option value="javascript">JavaScript</option>
+          <option value="kotlin">Kotlin</option>
+        </select>
+      </label>
+      <shadow-text-field></shadow-text-field>
+    </form>
+    <script>
+      customElements.define('shadow-text-field', class extends HTMLElement {
+        constructor() {
+          super();
+          const root = this.attachShadow({ mode: 'open' });
+          const input = document.createElement('input');
+          input.type = 'text';
+          input.setAttribute('aria-label', 'Shadow text field');
+          root.append(input);
+        }
+      });
+    </script>
+  </body>
+</html>
