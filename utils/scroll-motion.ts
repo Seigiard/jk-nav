@@ -2,7 +2,6 @@ import type { ScrollDirection } from './key-interpreter';
 
 export const SCROLL_STEP_PX = 200;
 export const SCROLL_STEP_DURATION_MS = 120;
-export const SCROLL_STEP_SPEED_PX_PER_MS = SCROLL_STEP_PX / SCROLL_STEP_DURATION_MS;
 export const CONTINUOUS_SCROLL_SPEED_PX_PER_S = 1500;
 export const CONTINUOUS_SCROLL_RAMP_MS = 100;
 export const MAX_FRAME_ELAPSED_MS = 50;
@@ -19,15 +18,19 @@ interface StepAnimation {
 }
 
 export interface ScrollMotion {
-  /** One tap: adds direction × SCROLL_STEP_PX to the remaining distance. */
+  /**
+   * Starts this tap's own easeOutCubic animation over SCROLL_STEP_DURATION_MS
+   * (120 ms) by direction × SCROLL_STEP_PX; tap curves add up. Ignored during
+   * Continuous scroll.
+   */
   addStep(direction: ScrollDirection): void;
-  /** Starts Continuous scroll in direction; drops any remaining step distance and restarts the ramp. */
+  /** Starts Continuous scroll in direction, drops pending step animations, and restarts the ramp. */
   startContinuous(direction: ScrollDirection): void;
   /** Ends Continuous scroll; afterwards advance() returns 0 until the next addStep/startContinuous. */
   stopContinuous(): void;
   /** Whole, signed px to scroll for a frame that took elapsedMs (clamped to [0, MAX_FRAME_ELAPSED_MS]). */
   advance(elapsedMs: number): number;
-  /** True while remaining step distance is not 0 or Continuous scroll runs. */
+  /** True while any step animation is unfinished or Continuous scroll runs. */
   isMoving(): boolean;
 }
 
@@ -38,6 +41,9 @@ export function createScrollMotion(): ScrollMotion {
   let fractionalDistance = 0;
 
   function addStep(direction: ScrollDirection): void {
+    if (continuousDirection !== null) {
+      return;
+    }
     stepAnimations.push({ direction, elapsedMs: 0 });
     if (Math.abs(fractionalDistance) < FRACTION_EPSILON) {
       fractionalDistance = 0;
