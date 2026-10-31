@@ -42,7 +42,7 @@ Use a long article with a search field, for example any Wikipedia article. Do ea
 | # | Action | Expected result |
 | --- | --- | --- |
 | 1 | Press `j`, `k`, `gg`, `G`. Press `f`, then type one Hint code. Press `f`, then `Esc`. Follow a link, then press `H` and `L`. | Each Key does what the README Keys table says. |
-| 2 | Tap `j` once. Then hold `j` for two seconds and release it. | The tap scrolls one Scroll step and stops. The hold scrolls without a pause, and the page stops at the moment of release. |
+| 2 | Tap `j` once. Then hold `j` for two seconds and release it. | The tap scrolls one Scroll step (200 px) smoothly and stops. The hold starts Continuous scroll when key repeat begins, after the expected short pause, and the page stops at the moment of release. |
 | 3 | Open three tabs in one window. On the last tab press `Shift+K`; on the first tab press `Shift+J`. | `Shift+K` activates the first tab; `Shift+J` activates the last tab. |
 | 3 | Put the middle tab in a new tab group (right-click the tab) and collapse the group (click its name). On the first tab press `Shift+K`. | The third tab becomes active, and the group stays collapsed. In Firefox older than 139 the middle tab becomes active; this is expected. |
 | 4 | Click the search field and type `j`, `k`, `J`, `K`, `f`. | The field shows `jkJKf`. The page does not scroll, and no Link hints show. |
