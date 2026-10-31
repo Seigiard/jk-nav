@@ -186,6 +186,7 @@ for (const editableChild of [
 
       // #when
       await page.keyboard.press('j');
+      await page.waitForTimeout(200);
 
       // #then
       expect({
@@ -233,6 +234,7 @@ test('j stays Typing while the top document is in designMode', async () => {
 
     // #when
     await page.keyboard.press('j');
+    await page.waitForTimeout(200);
 
     // #then
     expect({
@@ -268,6 +270,7 @@ test('a focused drop-down keeps type-to-select and does not scroll', async () =>
 
     // #when
     await page.keyboard.press('j');
+    await page.waitForTimeout(200);
 
     // #then
     expect({

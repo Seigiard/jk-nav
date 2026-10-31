@@ -139,9 +139,10 @@ test('IME composition does not scroll on KeyJ', async () => {
   try {
     // #when
     await tapSyntheticKey(page, { key: 'j', code: 'KeyJ', isComposing: true });
+    await page.waitForTimeout(200);
 
     // #then
-    await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+    expect(await page.evaluate(() => window.scrollY)).toBe(0);
   } finally {
     await context.close();
   }
