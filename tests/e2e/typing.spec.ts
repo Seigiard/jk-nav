@@ -37,7 +37,7 @@ test('j scrolls after clicking a button', async () => {
     await page.keyboard.press('j');
 
     // #then
-    await expect.poll(() => page.evaluate(() => window.scrollY), { timeout: 1000 }).toBeGreaterThanOrEqual(60);
+    await expect.poll(() => page.evaluate(() => window.scrollY), { timeout: 1000 }).toBe(200);
   });
 });
 
@@ -54,7 +54,7 @@ for (const control of [
       await page.keyboard.press('j');
 
       // #then
-      await expect.poll(() => page.evaluate(() => window.scrollY), { timeout: 1000 }).toBeGreaterThanOrEqual(60);
+      await expect.poll(() => page.evaluate(() => window.scrollY), { timeout: 1000 }).toBe(200);
     });
   });
 }
@@ -68,7 +68,7 @@ test('j scrolls with a slider focused', async () => {
     await page.keyboard.press('j');
 
     // #then
-    await expect.poll(() => page.evaluate(() => window.scrollY), { timeout: 1000 }).toBeGreaterThanOrEqual(60);
+    await expect.poll(() => page.evaluate(() => window.scrollY), { timeout: 1000 }).toBe(200);
   });
 });
 
@@ -167,8 +167,8 @@ test('j scrolls with a non-editable widget inside editable content focused', asy
     await page.keyboard.press('j');
 
     // #then
-    await expect.poll(() => page.evaluate(() => window.scrollY), { timeout: 1000 }).toBe(60);
-    expect(await page.evaluate(() => window.scrollY)).toBe(60);
+    await expect.poll(() => page.evaluate(() => window.scrollY), { timeout: 1000 }).toBe(200);
+    expect(await page.evaluate(() => window.scrollY)).toBe(200);
   });
 });
 
@@ -205,11 +205,11 @@ test('j scrolls when the top document is not in designMode', async () => {
     await page.keyboard.press('j');
 
     // #then
-    await expect.poll(() => page.evaluate(() => window.scrollY), { timeout: 1000 }).toBe(60);
+    await expect.poll(() => page.evaluate(() => window.scrollY), { timeout: 1000 }).toBe(200);
     expect({
       text: await editor.textContent(),
       scrollY: await page.evaluate(() => window.scrollY),
-    }).toEqual({ text: 'start', scrollY: 60 });
+    }).toEqual({ text: 'start', scrollY: 200 });
   });
 });
 

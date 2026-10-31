@@ -42,7 +42,7 @@ async function startContinuousScroll(page: Page, key: ScrollKey = 'j'): Promise<
   await page.keyboard.down(key);
   await page.keyboard.down(key);
   await page.waitForFunction(({ direction, position }) => (
-    direction === 'j' ? window.scrollY >= position + 120 : window.scrollY <= position - 120
+    direction === 'j' ? window.scrollY >= position + 400 : window.scrollY <= position - 400
   ), { direction: key, position: initialPosition });
   const positionAfterRepeat = await page.evaluate(() => window.scrollY);
   if (key === 'j') {
@@ -75,7 +75,7 @@ test('one KeyJ tap scrolls down exactly one step and then stays still', async ()
 
     // #when
     await page.keyboard.press('j');
-    await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(60);
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(200);
     const settledPosition = await page.evaluate(() => window.scrollY);
     await page.waitForTimeout(100);
     const positionAfterSettling = await page.evaluate(() => window.scrollY);
@@ -85,10 +85,10 @@ test('one KeyJ tap scrolls down exactly one step and then stays still', async ()
     expect({
       settledPosition,
       positionAfterSettling,
-      hasIntermediatePosition: scrollPositions.some((position) => position > 0 && position < 60),
+      hasIntermediatePosition: scrollPositions.some((position) => position > 0 && position < 200),
     }).toEqual({
-      settledPosition: 60,
-      positionAfterSettling: 60,
+      settledPosition: 200,
+      positionAfterSettling: 200,
       hasIntermediatePosition: true,
     });
   } finally {
@@ -106,15 +106,15 @@ test('one KeyK tap scrolls up exactly one step', async () => {
 
     // #when
     await page.keyboard.press('k');
-    await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(240);
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(100);
     const settledPosition = await page.evaluate(() => window.scrollY);
     await page.waitForTimeout(100);
     const positionAfterSettling = await page.evaluate(() => window.scrollY);
 
     // #then
     expect({ settledPosition, positionAfterSettling }).toEqual({
-      settledPosition: 240,
-      positionAfterSettling: 240,
+      settledPosition: 100,
+      positionAfterSettling: 100,
     });
   } finally {
     await context.close();
@@ -130,15 +130,15 @@ test('two KeyJ taps within 30 ms settle at two steps', async () => {
     await page.keyboard.press('j');
     await page.waitForTimeout(10);
     await page.keyboard.press('j');
-    await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(120);
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(400);
     const settledPosition = await page.evaluate(() => window.scrollY);
     await page.waitForTimeout(100);
     const positionAfterSettling = await page.evaluate(() => window.scrollY);
 
     // #then
     expect({ settledPosition, positionAfterSettling }).toEqual({
-      settledPosition: 120,
-      positionAfterSettling: 120,
+      settledPosition: 400,
+      positionAfterSettling: 400,
     });
   } finally {
     await context.close();
@@ -223,15 +223,15 @@ test('reduced motion makes one KeyJ tap instant', async () => {
 
     // #when
     await page.keyboard.press('j');
-    await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(60);
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(200);
     await page.waitForTimeout(100);
     const scrollPositions = await readScrollTrace(page);
     const finalPosition = await page.evaluate(() => window.scrollY);
 
     // #then
     expect({ uniquePositions: [...new Set(scrollPositions)], finalPosition }).toEqual({
-      uniquePositions: [60],
-      finalPosition: 60,
+      uniquePositions: [200],
+      finalPosition: 200,
     });
   } finally {
     await context.close();
@@ -247,15 +247,15 @@ test('a KeyJ tap settles exactly on a page with CSS smooth scrolling', async () 
 
     // #when
     await page.keyboard.press('j');
-    await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(60);
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(200);
     const settledPosition = await page.evaluate(() => window.scrollY);
     await page.waitForTimeout(100);
     const positionAfterSettling = await page.evaluate(() => window.scrollY);
 
     // #then
     expect({ settledPosition, positionAfterSettling }).toEqual({
-      settledPosition: 60,
-      positionAfterSettling: 60,
+      settledPosition: 200,
+      positionAfterSettling: 200,
     });
   } finally {
     await context.close();
@@ -292,7 +292,7 @@ test('a repeated KeyJ keydown starts Continuous scroll', async () => {
 
     // #when
     await page.keyboard.down('j');
-    await page.waitForFunction(() => window.scrollY >= 120);
+    await page.waitForFunction(() => window.scrollY >= 400);
     const positionAfterRepeat = await page.evaluate(() => window.scrollY);
 
     // #then

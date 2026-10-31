@@ -47,7 +47,7 @@ test('plain physical KeyJ scrolls exactly once', async () => {
     await tapSyntheticKey(page, { key: 'j', code: 'KeyJ' });
 
     // #then
-    await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(60);
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(200);
   } finally {
     await context.close();
   }
@@ -62,7 +62,7 @@ test('Russian-layout KeyJ scrolls down by physical position', async () => {
     await tapSyntheticKey(page, { key: 'о', code: 'KeyJ' });
 
     // #then
-    await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(60);
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(200);
   } finally {
     await context.close();
   }
@@ -77,7 +77,7 @@ test('Caps-Lock-style KeyJ without Shift scrolls down', async () => {
     await tapSyntheticKey(page, { key: 'J', code: 'KeyJ', shiftKey: false });
 
     // #then
-    await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(60);
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(200);
   } finally {
     await context.close();
   }
@@ -190,7 +190,7 @@ test('Russian-layout KeyJ keyup stops continuous scrolling by physical position'
   try {
     await page.keyboard.down('j');
     await page.keyboard.down('j');
-    await page.waitForFunction(() => window.scrollY >= 120);
+    await page.waitForFunction(() => window.scrollY >= 400);
     const positionAfterRepeat = await page.evaluate(() => window.scrollY);
     await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(positionAfterRepeat);
 
