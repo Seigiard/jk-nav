@@ -15,6 +15,9 @@ export interface Environment {
   platform: string;
   arch: string;
   container: boolean;
+  // Docker --cpus and --memory as docker.sh passed them; null outside a container.
+  cpus: string | null;
+  memory: string | null;
   chromium: string;
 }
 
@@ -115,7 +118,7 @@ export function compareToBaseline(baseline: Baseline, current: Record<BaselineMe
 }
 
 export function environmentMismatch(baseline: Environment, current: Environment): string | null {
-  const fields: (keyof Environment)[] = ['platform', 'arch', 'container', 'chromium'];
+  const fields: (keyof Environment)[] = ['platform', 'arch', 'container', 'cpus', 'memory', 'chromium'];
   const differences = fields
     .filter((field) => baseline[field] !== current[field])
     .map((field) => `${field}: ${String(baseline[field])} (baseline) vs ${String(current[field])} (current)`);

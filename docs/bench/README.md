@@ -13,7 +13,7 @@ Memory is not measured. Each column is a fresh browser profile; the table shows 
 
 `npm run bench:check` builds the extension, runs the single-page scenario in a Docker container, and compares it with `baseline.json`. `npm run bench:baseline` records a new baseline the same way. Both need Docker. The run takes about 6 minutes.
 
-The container is `docs/bench/Dockerfile`: the Playwright image that matches `@playwright/test` in `package-lock.json`, with 2 CPUs and 4 GB through `docs/bench/docker.sh` (`BENCH_CPUS`, `BENCH_MEMORY`). The image pins the Chromium build, and the CPU cap removes most of the difference between machines. `baseline.json` records the platform, architecture, container flag, and Chromium version; the check stops before the runs when any of them differs from the current environment. The numbers inside the container differ from the native table below: no GPU, two cores. Compare container runs only with container runs.
+The container is `docs/bench/Dockerfile`: the Playwright image that matches `@playwright/test` in `package-lock.json`, with 2 CPUs and 4 GB through `docs/bench/docker.sh` (`BENCH_CPUS`, `BENCH_MEMORY`). The image pins the Chromium build, and the CPU cap removes most of the difference between machines. `baseline.json` records the platform, architecture, container flag, CPU and memory limits, and Chromium version; the check stops before the runs when any of them differs from the current environment. The numbers inside the container differ from the native table below: no GPU, two cores. Compare container runs only with container runs.
 
 The check compares medians of 20 runs:
 

@@ -29,7 +29,7 @@ function baseline(metrics: Partial<Baseline['metrics']>): Baseline {
     recordedAt: '2026-11-08T00:00:00.000Z',
     commit: 'abc1234',
     iterations: 20,
-    environment: { platform: 'linux', arch: 'arm64', container: true, chromium: '142.0.7444.52' },
+    environment: { platform: 'linux', arch: 'arm64', container: true, cpus: '2', memory: '4g', chromium: '142.0.7444.52' },
     tolerance,
     metrics: {
       domContentLoadedOverhead: 0,
@@ -153,17 +153,27 @@ describe('compareToBaseline', () => {
 describe('environmentMismatch', () => {
   it('returns null for the same environment', () => {
     // #given
-    const environment = { platform: 'linux', arch: 'arm64', container: true, chromium: '142.0.7444.52' };
+    const environment = { platform: 'linux', arch: 'arm64', container: true, cpus: '2', memory: '4g', chromium: '142.0.7444.52' };
     // #when
     const mismatch = environmentMismatch(environment, { ...environment });
     // #then
     expect(mismatch).toBeNull();
   });
 
+  it('treats a different CPU limit as another environment', () => {
+    // #given
+    const recorded = { platform: 'linux', arch: 'arm64', container: true, cpus: '2', memory: '4g', chromium: '142.0.7444.52' };
+    const current = { ...recorded, cpus: '1' };
+    // #when
+    const mismatch = environmentMismatch(recorded, current);
+    // #then
+    expect(mismatch).toBe('cpus: 2 (baseline) vs 1 (current)');
+  });
+
   it('names each field that differs with the baseline and current values', () => {
     // #given
-    const recorded = { platform: 'linux', arch: 'arm64', container: true, chromium: '142.0.7444.52' };
-    const current = { platform: 'darwin', arch: 'arm64', container: false, chromium: '142.0.7444.52' };
+    const recorded = { platform: 'linux', arch: 'arm64', container: true, cpus: '2', memory: '4g', chromium: '142.0.7444.52' };
+    const current = { platform: 'darwin', arch: 'arm64', container: false, cpus: '2', memory: '4g', chromium: '142.0.7444.52' };
     // #when
     const mismatch = environmentMismatch(recorded, current);
     // #then

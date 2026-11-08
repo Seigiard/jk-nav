@@ -556,6 +556,8 @@ const currentEnvironment = (): Environment => ({
   platform: process.platform,
   arch: process.arch,
   container: process.env.BENCH_CONTAINER === '1',
+  cpus: process.env.BENCH_CPUS ?? null,
+  memory: process.env.BENCH_MEMORY ?? null,
   chromium: chromiumVersion,
 });
 for (const config of configs) {

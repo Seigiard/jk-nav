@@ -6,6 +6,8 @@
     "platform": "linux",
     "arch": "arm64",
     "container": true,
+    "cpus": "2",
+    "memory": "4g",
     "chromium": "156.0.8078.80"
   },
   "tolerance": {

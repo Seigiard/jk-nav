@@ -15,9 +15,11 @@ fi
 image=jk-nav-bench
 docker build --quiet -t "$image" -f docs/bench/Dockerfile . >/dev/null
 
+cpus="${BENCH_CPUS:-2}"
+memory="${BENCH_MEMORY:-4g}"
 exec docker run --rm \
-  --cpus="${BENCH_CPUS:-2}" --memory="${BENCH_MEMORY:-4g}" --shm-size=1g \
-  -e BENCH_CONTAINER=1 \
+  --cpus="$cpus" --memory="$memory" --shm-size=1g \
+  -e BENCH_CONTAINER=1 -e BENCH_CPUS="$cpus" -e BENCH_MEMORY="$memory" \
   -e BENCH_COMMIT="$(git describe --always --dirty)" \
   -v "$PWD/.output/chrome-mv3:/work/.output/chrome-mv3:ro" \
   -v "$PWD/docs/bench:/work/docs/bench" \
